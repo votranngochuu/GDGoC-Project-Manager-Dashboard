@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+     <head>
+          <meta charset="UTF-8" />
+          <meta
+               name="viewport"
+               content="width=device-width, initial-scale=1.0"
+          />
+          <title>GDGoC Dashboard</title>
+          <link rel="stylesheet" href="styles.css" />
+     </head>
+     <body>
+          <button id="sidebar-toggle" class="sidebar-toggle">☰</button>
+          <div class="container">
+               <div class="sidebar" id="sidebar">
+                    <div>
+                         <div class="logo">GDGoC</div>
+                         <div class="menu">
+                              <a id="nav-dashboard" class="active" href="#"
+                                   >Dashboard</a
+                              >
+                              <a id="nav-projects" href="#">Projects</a>
+                              <a id="nav-tasks" href="#">Tasks</a>
+                              <a id="nav-profile" href="#">Profile</a>
+                              <a id="nav-admin" class="admin-only" href="#"
+                                   >Admin</a
+                              >
+                         </div>
+                    </div>
+                    <div class="download">
+                         <button id="logout" class="btn btn-outline">
+                              Logout
+                         </button>
+                    </div>
+               </div>
+               <div class="main" id="content">
+                    <!-- dynamic content will load here -->
+               </div>
+          </div>
+
+          <script type="module" src="app.js"></script>
+     </body>
+</html>
