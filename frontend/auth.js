@@ -6,19 +6,22 @@ import {
      onAuthStateChanged,
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { apiRequest } from './api.js';
+import { env } from './env.js';
 
 /*
   Replace the following config with your own Firebase project settings.
   Copy from the Firebase console under project settings > General.
 */
 const firebaseConfig = {
-     apiKey: 'YOUR_API_KEY',
-     authDomain: 'YOUR_PROJECT_ID.firebaseapp.com',
-     projectId: 'YOUR_PROJECT_ID',
-     storageBucket: 'YOUR_PROJECT_ID.appspot.com',
-     messagingSenderId: '...',
-     appId: '...',
+     apiKey: env.FIREBASE_API_KEY,
+     authDomain: env.FIREBASE_AUTH_DOMAIN,
+     projectId: env.FIREBASE_PROJECT_ID,
+     storageBucket: env.FIREBASE_STORAGE_BUCKET,
+     messagingSenderId: env.FIREBASE_MESSAGING_SENDER_ID,
+     appId: env.FIREBASE_APP_ID,
+     measurementId: env.FIREBASE_MEASUREMENT_ID
 };
+
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -26,29 +29,34 @@ const provider = new GoogleAuthProvider();
 
 // called when the user clicks the sign‑in button
 export async function login() {
+     const errorEl = document.getElementById('error-msg');
      try {
           const result = await signInWithPopup(auth, provider);
-          // the ID token from Google; send it to our backend for verification
+          // Firebase ID token — sent to backend for verification, also used as Bearer token for subsequent requests
           const idToken = await result.user.getIdToken();
 
-          // backend endpoint should verify firebase token and return accessToken + role
-          const res = await fetch('http://localhost:8080/api/auth/google', {
+          // POST /gdgoc_dashboard/api/auth/login — backend verifies Firebase token and returns UserResponse
+          const res = await fetch(`${env.BACKEND_URL}/auth/login`, {
                method: 'POST',
                headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ idToken }),
           });
 
           if (!res.ok) {
-               const err = await res.json();
-               throw new Error(err.message || 'Login failed');
+               const err = await res.json().catch(() => ({}));
+               throw new Error(err.message || `Login failed (${res.status})`);
           }
 
           const data = await res.json();
-          localStorage.setItem('accessToken', data.accessToken);
+          // Backend uses Firebase ID token as the Bearer token for all subsequent API calls
+          localStorage.setItem('accessToken', idToken);
           localStorage.setItem('role', data.role);
+          localStorage.setItem('userId', data.id);
+          localStorage.setItem('displayName', data.displayName);
           window.location.href = 'dashboard.html';
      } catch (e) {
-          document.getElementById('error').textContent = e.message;
+          if (errorEl) errorEl.textContent = e.message;
+          else console.error('Login error:', e.message);
      }
 }
 
@@ -61,10 +69,12 @@ if (signInButton) {
 // optional: react to auth state changes automatically
 onAuthStateChanged(auth, async (user) => {
      if (user) {
-          // user already logged in, maybe redirect
-          const role = localStorage.getItem('role');
-          if (role) {
-               window.location.href = 'dashboard.html';
+          // Only redirect if NOT already on the dashboard page
+          if (!window.location.pathname.includes('dashboard.html')) {
+               const role = localStorage.getItem('role');
+               if (role) {
+                    window.location.href = 'dashboard.html';
+               }
           }
      }
 });

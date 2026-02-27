@@ -1,43 +1,90 @@
 <!doctype html>
 <html lang="en">
-     <head>
-          <meta charset="UTF-8" />
-          <meta
-               name="viewport"
-               content="width=device-width, initial-scale=1.0"
-          />
-          <title>GDGoC Dashboard</title>
-          <link rel="stylesheet" href="styles.css" />
-     </head>
-     <body>
-          <button id="sidebar-toggle" class="sidebar-toggle">☰</button>
-          <div class="container">
-               <div class="sidebar" id="sidebar">
-                    <div>
-                         <div class="logo">GDGoC</div>
-                         <div class="menu">
-                              <a id="nav-dashboard" class="active" href="#"
-                                   >Dashboard</a
-                              >
-                              <a id="nav-projects" href="#">Projects</a>
-                              <a id="nav-tasks" href="#">Tasks</a>
-                              <a id="nav-profile" href="#">Profile</a>
-                              <a id="nav-admin" class="admin-only" href="#"
-                                   >Admin</a
-                              >
-                         </div>
-                    </div>
-                    <div class="download">
-                         <button id="logout" class="btn btn-outline">
-                              Logout
-                         </button>
-                    </div>
-               </div>
-               <div class="main" id="content">
-                    <!-- dynamic content will load here -->
-               </div>
-          </div>
 
-          <script type="module" src="app.js"></script>
-     </body>
+<head>
+     <meta charset="UTF-8" />
+     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+     <link rel="icon" type="image/png" href="/GDGoC-Project-Manager-Dashboard/frontend/Public/gdgLogo.png" />
+     <title>GDGoC Dashboard</title>
+
+     <!-- Fonts and Icons -->
+     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+     <!-- Modular CSS -->
+     <link rel="stylesheet" href="css/variables.css" />
+     <link rel="stylesheet" href="css/base.css" />
+     <link rel="stylesheet" href="css/dashboard.css" />
+     <link rel="stylesheet" href="css/components.css" />
+</head>
+
+<body>
+     <div class="wrapper">
+          <!-- SIDEBAR -->
+          <aside class="sidebar" id="sidebar">
+               <div class="top-section">
+                    <div class="logo-container">
+                         <img src="/GDGoC-Project-Manager-Dashboard/frontend/Public/gdgLogo.png" alt="GDG Logo" />
+                         <span class="logo-text">GDGoC</span>
+                    </div>
+
+                    <div class="sidebar-section-label">Menu</div>
+                    <nav class="menu">
+                         <a id="nav-dashboard" class="nav-link active">
+                              <i class="fas fa-th-large"></i> Dashboard
+                         </a>
+                         <a id="nav-projects" class="nav-link">
+                              <i class="fas fa-folder"></i> Projects
+                         </a>
+                         <a id="nav-tasks" class="nav-link">
+                              <i class="fas fa-tasks"></i> Tasks
+                         </a>
+                    </nav>
+
+                    <div class="sidebar-section-label">General</div>
+                    <nav class="menu">
+                         <a id="nav-profile" class="nav-link">
+                              <i class="fas fa-user-circle"></i> Profile
+                         </a>
+                    </nav>
+               </div>
+
+               <div class="sidebar-footer">
+                    <div class="download-card">
+                         <h4>Download our Mobile App</h4>
+                         <button class="btn-download">COMMING SOON</button>
+                    </div>
+                    <a id="logout" class="nav-link">
+                         <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+               </div>
+          </aside>
+
+          <!-- MAIN CONTENT -->
+          <main class="main-content">
+               <header class="header">
+                    <div class="search-container">
+                         <i class="fas fa-search" style="color: var(--text-light);"></i>
+                         <input type="text" placeholder="Search task...">
+                    </div>
+                    <div class="user-profile" style="display: flex; align-items: center; gap: 15px;">
+                         <div style="text-align: right;">
+                              <div id="user-display-name" style="font-weight: 700; color: var(--text-dark);">User</div>
+                              <div id="user-display-email" style="font-size: 11px; color: var(--text-light);">
+                                   user@gdg.com</div>
+                         </div>
+                         <img id="user-avatar" src="https://i.pravatar.cc/40" class="avatar"
+                              style="width: 40px; height: 40px; border-radius: 50%;">
+                    </div>
+               </header>
+
+               <div id="content" style="flex: 1;">
+                    <!-- Dynamic Dashboard Content -->
+               </div>
+          </main>
+     </div>
+
+     <script type="module" src="app.js"></script>
+</body>
+
 </html>
