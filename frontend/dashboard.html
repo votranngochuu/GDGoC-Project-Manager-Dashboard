@@ -11,6 +11,19 @@
      <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
+     <!-- Early Auth Guard -->
+     <script>
+          if (!localStorage.getItem('accessToken')) {
+               window.location.href = 'index.html';
+          }
+     </script>
+
+     <style>
+          body {
+               visibility: hidden;
+          }
+     </style>
+
      <!-- Modular CSS -->
      <link rel="stylesheet" href="css/variables.css" />
      <link rel="stylesheet" href="css/base.css" />
@@ -38,6 +51,9 @@
                          </a>
                          <a id="nav-tasks" class="nav-link">
                               <i class="fas fa-tasks"></i> Tasks
+                         </a>
+                         <a id="nav-users" class="nav-link admin-only" style="display:none;">
+                              <i class="fas fa-users"></i> Users
                          </a>
                     </nav>
 
