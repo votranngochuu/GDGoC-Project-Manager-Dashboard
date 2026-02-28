@@ -68,6 +68,11 @@ public class TaskService {
             User assignee = userRepository.findById(request.getAssigneeId())
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Assignee not found with id: " + request.getAssigneeId()));
+
+            if (!projectMemberRepository.existsByProjectIdAndUserId(project.getId(), assignee.getId())
+                    && (project.getLeader() == null || !project.getLeader().getId().equals(assignee.getId()))) {
+                throw new IllegalArgumentException("Assignee must be a member or leader of the project");
+            }
             task.setAssignee(assignee);
         }
 
@@ -98,6 +103,12 @@ public class TaskService {
             User assignee = userRepository.findById(request.getAssigneeId())
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Assignee not found with id: " + request.getAssigneeId()));
+
+            if (!projectMemberRepository.existsByProjectIdAndUserId(task.getProject().getId(), assignee.getId())
+                    && (task.getProject().getLeader() == null
+                            || !task.getProject().getLeader().getId().equals(assignee.getId()))) {
+                throw new IllegalArgumentException("Assignee must be a member or leader of the project");
+            }
             task.setAssignee(assignee);
         }
 

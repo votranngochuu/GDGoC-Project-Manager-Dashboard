@@ -46,4 +46,15 @@ public class UserService {
 
         return AuthService.toResponse(user);
     }
+
+    @Transactional
+    public UserResponse updateProfile(UUID userId, String newDisplayName) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        user.setDisplayName(newDisplayName);
+        userRepository.save(user);
+
+        return AuthService.toResponse(user);
+    }
 }

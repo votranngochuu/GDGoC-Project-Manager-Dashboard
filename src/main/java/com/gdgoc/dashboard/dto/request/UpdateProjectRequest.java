@@ -15,4 +15,8 @@ public class UpdateProjectRequest {
     private ProjectStatus status;
 
     private UUID leaderId;
+
+    private java.time.LocalDate startDate;
+
+    private java.time.LocalDate endDate;
 }

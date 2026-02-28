@@ -33,6 +33,10 @@ public class Project {
     @Column(nullable = false)
     private ProjectStatus status = ProjectStatus.ACTIVE;
 
+    private java.time.LocalDate startDate;
+
+    private java.time.LocalDate endDate;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "leader_id")
     private User leader;

@@ -78,6 +78,8 @@ public class ProjectService {
                 .name(request.getName())
                 .description(request.getDescription())
                 .status(ProjectStatus.ACTIVE)
+                .startDate(request.getStartDate())
+                .endDate(request.getEndDate())
                 .build();
 
         return toResponse(projectRepository.save(project));
@@ -96,6 +98,12 @@ public class ProjectService {
         }
         if (request.getStatus() != null) {
             project.setStatus(request.getStatus());
+        }
+        if (request.getStartDate() != null) {
+            project.setStartDate(request.getStartDate());
+        }
+        if (request.getEndDate() != null) {
+            project.setEndDate(request.getEndDate());
         }
         if (request.getLeaderId() != null) {
             User leader = userRepository.findById(request.getLeaderId())
@@ -175,6 +183,8 @@ public class ProjectService {
                 .leader(AuthService.toResponse(project.getLeader()))
                 .memberCount(memberCount)
                 .taskCount(taskCount)
+                .startDate(project.getStartDate())
+                .endDate(project.getEndDate())
                 .createdAt(project.getCreatedAt())
                 .build();
     }

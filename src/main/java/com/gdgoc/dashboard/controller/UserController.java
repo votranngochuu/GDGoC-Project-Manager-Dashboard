@@ -44,4 +44,11 @@ public class UserController {
         Role newRole = Role.valueOf(body.get("role").toUpperCase());
         return ResponseEntity.ok(userService.updateUserRole(id, newRole, currentUser));
     }
+
+    @PutMapping("/me/name")
+    public ResponseEntity<UserResponse> updateProfile(
+            @RequestBody com.gdgoc.dashboard.dto.request.UpdateProfileRequest request,
+            @CurrentUser User currentUser) {
+        return ResponseEntity.ok(userService.updateProfile(currentUser.getId(), request.getDisplayName()));
+    }
 }

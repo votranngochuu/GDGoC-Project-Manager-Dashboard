@@ -17,5 +17,7 @@ public class ProjectResponse {
     private UserResponse leader;
     private long memberCount;
     private long taskCount;
+    private java.time.LocalDate startDate;
+    private java.time.LocalDate endDate;
     private LocalDateTime createdAt;
 }

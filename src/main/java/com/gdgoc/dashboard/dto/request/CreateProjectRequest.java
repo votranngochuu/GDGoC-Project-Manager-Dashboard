@@ -10,4 +10,8 @@ public class CreateProjectRequest {
     private String name;
 
     private String description;
+
+    private java.time.LocalDate startDate;
+
+    private java.time.LocalDate endDate;
 }
