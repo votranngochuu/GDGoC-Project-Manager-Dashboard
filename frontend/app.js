@@ -710,7 +710,7 @@ async function loadProjectDetail(id) {
      content.innerHTML = `<div class="spinner"></div> Loading project...`;
      try {
           const project = await apiRequest(`/projects/${id}`);
-          const tasks = (await apiRequest(`/projects/${id}/tasks`)) || [];
+          const tasks = (await apiRequest(`/tasks/project/${id}`)) || [];
 
           // Try to get members from leader dashboard if possible
           let members = [];
@@ -966,7 +966,7 @@ function showAddTaskModal(projectId, members) {
           btn.textContent = 'Creating...';
 
           try {
-               await apiRequest(`/projects/${projectId}/tasks`, 'POST', {
+               await apiRequest(`/tasks/project/${projectId}`, 'POST', {
                     title,
                     description,
                     priority,
