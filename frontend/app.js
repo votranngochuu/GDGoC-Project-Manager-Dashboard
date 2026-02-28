@@ -701,6 +701,44 @@ function attachProjectHandlers() {
      const filterBox = document.getElementById('project-filter');
      if (searchBox) searchBox.addEventListener('input', applyProjectFilters);
      if (filterBox) filterBox.addEventListener('change', applyProjectFilters);
+
+     // Open project detail on "Mở" button click
+     document.querySelectorAll('.open-project').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+               e.stopPropagation();
+               const card = btn.closest('.project-card');
+               if (card) loadProjectDetail(card.dataset.id);
+          });
+     });
+
+     // Delete project on "Xóa" button click
+     document.querySelectorAll('.delete-project').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+               e.stopPropagation();
+               const card = btn.closest('.project-card');
+               if (!card) return;
+               if (!confirm('Bạn có chắc muốn xóa project này?')) return;
+               try {
+                    await apiRequest(`/projects/${card.dataset.id}`, 'DELETE');
+                    loadProjects();
+               } catch (err) {
+                    alert('Error: ' + err.message);
+               }
+          });
+     });
+
+     // Click anywhere on project card to open detail
+     document.querySelectorAll('.project-card').forEach(card => {
+          card.addEventListener('click', () => {
+               loadProjectDetail(card.dataset.id);
+          });
+     });
+
+     // Create project button
+     const createBtn = document.getElementById('create-project');
+     if (createBtn) {
+          createBtn.addEventListener('click', () => showCreateProjectModal());
+     }
 }
 
 async function loadProjectDetail(id) {
