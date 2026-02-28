@@ -16,6 +16,7 @@ import com.gdgoc.dashboard.repository.ProjectRepository;
 import com.gdgoc.dashboard.repository.TaskRepository;
 import com.gdgoc.dashboard.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
@@ -70,26 +72,50 @@ public class ProjectService {
 
     @Transactional
     public ProjectResponse createProject(CreateProjectRequest request, User currentUser) {
-        if (currentUser.getRole() != Role.ADMIN) {
-            throw new UnauthorizedException("Only admins can create projects");
+        if (currentUser.getRole() != Role.ADMIN && currentUser.getRole() != Role.LEADER) {
+            throw new UnauthorizedException("Only admins and leaders can create projects");
         }
 
-        Project project = Project.builder()
-                .name(request.getName())
-                .description(request.getDescription())
-                .status(ProjectStatus.PLANNING)
-                .startDate(request.getStartDate())
-                .endDate(request.getEndDate())
-                .build();
+        try {
+            log.info("Starting project creation: {}", request.getName());
+            Project project = Project.builder()
+                    .name(request.getName())
+                    .description(request.getDescription())
+                    .status(ProjectStatus.ACTIVE)
+                    .startDate(request.getStartDate())
+                    .endDate(request.getEndDate())
+                    .build();
 
-        if (request.getLeaderId() != null) {
-            User leader = userRepository.findById(request.getLeaderId())
-                    .orElseThrow(
-                            () -> new ResourceNotFoundException("User not found with id: " + request.getLeaderId()));
-            project.setLeader(leader);
+            User leader = null;
+            if (request.getLeaderId() != null) {
+                log.info("Finding leader with id: {}", request.getLeaderId());
+                leader = userRepository.findById(request.getLeaderId())
+                        .orElseThrow(
+                                () -> new ResourceNotFoundException(
+                                        "User not found with id: " + request.getLeaderId()));
+                project.setLeader(leader);
+            }
+
+            log.info("Saving project to database...");
+            Project savedProject = projectRepository.save(project);
+            log.info("Project saved successfully with ID: {}", savedProject.getId());
+
+            // Automatically add the leader as the first member of the project
+            if (leader != null) {
+                log.info("Adding leader as project member...");
+                ProjectMember leaderMember = ProjectMember.builder()
+                        .project(savedProject)
+                        .user(leader)
+                        .build();
+                projectMemberRepository.save(leaderMember);
+                log.info("Leader added to project members successfully.");
+            }
+
+            return toResponse(savedProject);
+        } catch (Exception e) {
+            log.error("CRITICAL ERROR during project creation: {}", e.getMessage(), e);
+            throw e;
         }
-
-        return toResponse(projectRepository.save(project));
     }
 
     @Transactional

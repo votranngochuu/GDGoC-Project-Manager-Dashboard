@@ -29,6 +29,18 @@ export async function apiRequest(endpoint, method = 'GET', body = null) {
 
           const response = await fetch(BASE_URL + endpoint, options);
 
+          if (!response.ok && response.status !== 401 && response.status !== 403) {
+               const text = await response.text();
+               let errorMsg = "API Error";
+               try {
+                    const errJson = JSON.parse(text);
+                    errorMsg = errJson.message || errJson.error || text;
+               } catch (e) {
+                    errorMsg = text || response.statusText;
+               }
+               throw new Error(errorMsg);
+          }
+
           if (response.status === 401 || response.status === 403) {
                // Try once more with a force-refreshed token
                const { auth } = await import('./firebase-init.js');
@@ -38,6 +50,18 @@ export async function apiRequest(endpoint, method = 'GET', body = null) {
                     localStorage.setItem('accessToken', freshToken);
                     options.headers.Authorization = 'Bearer ' + freshToken;
                     const retryResponse = await fetch(BASE_URL + endpoint, options);
+
+                    if (!retryResponse.ok) {
+                         const text = await retryResponse.text();
+                         let errorMsg = "API Error after retry";
+                         try {
+                              const errJson = JSON.parse(text);
+                              errorMsg = errJson.message || errJson.error || text;
+                         } catch (e) {
+                              errorMsg = text || retryResponse.statusText;
+                         }
+                         throw new Error(errorMsg);
+                    }
 
                     if (retryResponse.status === 401 || retryResponse.status === 403) {
                          console.error('Still unauthorized after token refresh, status:', retryResponse.status);
