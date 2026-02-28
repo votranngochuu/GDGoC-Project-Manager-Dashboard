@@ -176,6 +176,7 @@ public class TaskService {
                                 .map(AuthService::toResponse)
                                 .collect(Collectors.toList()))
                 .createdAt(task.getCreatedAt())
+                .updatedAt(task.getUpdatedAt())
                 .build();
     }
 }

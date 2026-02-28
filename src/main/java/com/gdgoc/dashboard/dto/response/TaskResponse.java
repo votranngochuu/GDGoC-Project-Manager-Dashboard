@@ -22,4 +22,5 @@ public class TaskResponse {
     private UUID projectId;
     private List<UserResponse> assignees;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

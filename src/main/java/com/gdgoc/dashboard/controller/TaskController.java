@@ -44,7 +44,7 @@ public class TaskController {
 
     @PutMapping("/{id}")
     public ResponseEntity<TaskResponse> updateTask(@PathVariable UUID id,
-            @RequestBody UpdateTaskRequest request,
+            @Valid @RequestBody UpdateTaskRequest request,
             @CurrentUser User currentUser) {
         return ResponseEntity.ok(taskService.updateTask(id, request, currentUser));
     }

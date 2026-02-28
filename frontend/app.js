@@ -156,49 +156,32 @@ function renderDashboard(role, data) {
           `;
      }
      html += `</div>`;
-
-     // --- ROW 2: ANALYTICS & RECENT (Customized) ---
+     // --- ROW 2: ANALYTICS & RECENT (Chart.js) ---
      html += `<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 25px;">`;
 
-     // Analytics Bar (Dynamic distribution)
+     // Analytics Bar (Chart.js)
      let analyticsTitle = "System Analytics";
-     let bars = [];
+     let chartLabels = [];
+     let chartValues = [];
+     let chartColors = [];
 
      if (role === 'ADMIN') {
           analyticsTitle = "Phân phối hệ thống";
-          const maxVal = Math.max(data.totalProjects || 0, data.totalTasks || 0, 1);
-          bars = [
-               { label: 'Tổng số', value: data.totalProjects || 0, color: 'var(--gdg-blue)', height: ((data.totalProjects || 0) / maxVal) * 100 },
-               { label: 'Đang làm', value: data.activeProjects || 0, color: 'var(--gdg-green)', height: ((data.activeProjects || 0) / maxVal) * 100 },
-               { label: 'Sắp tới', value: data.upcomingProjects || 0, color: 'var(--gdg-blue)', height: ((data.upcomingProjects || 0) / maxVal) * 100 },
-               { label: 'Quá hạn', value: data.overdueProjects || 0, color: 'var(--gdg-red)', height: ((data.overdueProjects || 0) / maxVal) * 100 },
-               { label: 'Công việc', value: data.totalTasks || 0, color: 'var(--gdg-yellow)', height: ((data.totalTasks || 0) / maxVal) * 100 }
-          ];
+          chartLabels = ['Tổng số', 'Đang làm', 'Sắp tới', 'Quá hạn', 'Công việc'];
+          chartValues = [data.totalProjects || 0, data.activeProjects || 0, data.upcomingProjects || 0, data.overdueProjects || 0, data.totalTasks || 0];
+          chartColors = ['#4285F4', '#34A853', '#4285F4', '#EA4335', '#FBBC05'];
      } else {
           analyticsTitle = role === 'LEADER' ? "Dòng chảy công việc" : "Khối lượng công việc";
-          const tasks = [data.todoTasks || 0, data.inProgressTasks || 0, data.completedTasks || 0, data.overdueTasks || 0];
-          const maxVal = Math.max(...tasks, 1);
-          bars = [
-               { label: 'Cần làm', value: data.todoTasks || 0, color: 'var(--gdg-blue)', height: ((data.todoTasks || 0) / maxVal) * 100 },
-               { label: 'Đang làm', value: data.inProgressTasks || 0, color: 'var(--gdg-yellow)', height: ((data.inProgressTasks || 0) / maxVal) * 100 },
-               { label: 'Hoàn thành', value: data.completedTasks || 0, color: 'var(--gdg-green)', height: ((data.completedTasks || 0) / maxVal) * 100 },
-               { label: 'Trễ hạn', value: data.overdueTasks || 0, color: 'var(--gdg-red)', height: ((data.overdueTasks || 0) / maxVal) * 100 }
-          ];
+          chartLabels = ['Cần làm', 'Đang làm', 'Hoàn thành', 'Trễ hạn'];
+          chartValues = [data.todoTasks || 0, data.inProgressTasks || 0, data.completedTasks || 0, data.overdueTasks || 0];
+          chartColors = ['#4285F4', '#FBBC05', '#34A853', '#EA4335'];
      }
 
      html += `
           <div class="card">
-               <h3 style="margin:0">${analyticsTitle}</h3>
-               <div class="analytics-bars" style="display: flex; align-items: flex-end; gap: 12px; height: 160px; margin-top: 20px; padding: 10px 0;">
-                    ${bars.map(b => `
-                         <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                              <div class="bar-container" style="width: 100%; height: 120px; display: flex; align-items: flex-end; justify-content: center; position: relative;">
-                                   <div class="bar-value" style="position: absolute; top: -20px; font-size: 11px; font-weight: 600;">${b.value}</div>
-                                   <div class="bar" style="width: 100%; height: ${b.height}%; background: ${b.color}; border-radius: 6px; transition: height 0.3s ease; cursor: pointer;" title="${b.label}: ${b.value}"></div>
-                              </div>
-                              <div style="font-size: 10px; color: var(--text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; text-align: center;">${b.label}</div>
-                         </div>
-                    `).join('')}
+               <h3 style="margin:0 0 10px 0">${analyticsTitle}</h3>
+               <div style="height: 180px; position: relative;">
+                    <canvas id="analyticsChart"></canvas>
                </div>
           </div>
      `;
@@ -213,10 +196,10 @@ function renderDashboard(role, data) {
                <div class="recent-list">
                     ${data.recentItems && data.recentItems.length > 0 ?
                data.recentItems.map(item => `
-                               <div class="recent-item" data-id="${item.id}" style="display: flex; gap: 10px; align-items: center; margin-bottom: 12px; cursor: pointer;">
-                                    <div style="width: 8px; height: 8px; border-radius: 50%; background: ${item.color};"></div>
-                                    <span style="font-size: 13px; font-weight: 500;">${item.name}</span>
-                               </div>
+                              <div class="recent-item" data-id="${item.id}" style="display: flex; gap: 10px; align-items: center; margin-bottom: 12px; cursor: pointer;">
+                                   <div style="width: 8px; height: 8px; border-radius: 50%; background: ${item.color};"></div>
+                                   <span style="font-size: 13px; font-weight: 500;">${item.name}</span>
+                              </div>
                          `).join('') : '<p style="font-size: 13px; color: var(--text-light);">No recent items found.</p>'}
                </div>
           </div>
@@ -253,7 +236,7 @@ function renderDashboard(role, data) {
           </div>
      `;
 
-     // Progress Gauge
+     // Progress Doughnut Chart (Chart.js)
      let progressTitle = "Global Progress";
      if (role === 'LEADER') progressTitle = "Project Delivery";
      else if (role === 'MEMBER') progressTitle = "Personal Goal";
@@ -261,14 +244,13 @@ function renderDashboard(role, data) {
      const progress = role === 'ADMIN' ? (data.overallCompletion || 0) :
           (data.totalTasks ? Math.round((data.completedTasks / data.totalTasks) * 100) : 0);
 
-     const gaugeColor = progress > 75 ? 'var(--gdg-green)' : (progress > 40 ? 'var(--gdg-yellow)' : 'var(--gdg-red)');
-
      html += `
           <div class="card" style="text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                <h3>${progressTitle}</h3>
-               <div style="margin: 20px auto; width: 140px; height: 140px; border-radius: 50%; background: conic-gradient(${gaugeColor} ${progress}%, #eee 0%); display: flex; align-items: center; justify-content: center; position: relative; box-shadow: inset 0 0 10px rgba(0,0,0,0.05);">
-                    <div style="width: 110px; height: 110px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; color: var(--text-dark); box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-                         ${Math.round(progress)}<span style="font-size: 14px; font-weight: 600; margin-left: 2px;">%</span>
+               <div style="width: 160px; height: 160px; margin: 10px auto; position: relative;">
+                    <canvas id="progressChart"></canvas>
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 28px; font-weight: 800; color: var(--text-dark);">
+                         ${Math.round(progress)}<span style="font-size: 14px; font-weight: 600;">%</span>
                     </div>
                </div>
                <div style="font-size: 12px; color: var(--text-light); font-weight: 500;">
@@ -334,6 +316,77 @@ function renderDashboard(role, data) {
           if (addBtn) {
                addBtn.addEventListener('click', () => showCreateProjectModal());
           }
+     }
+
+     // --- Chart.js: Analytics Bar Chart ---
+     const analyticsCanvas = document.getElementById('analyticsChart');
+     if (analyticsCanvas && typeof Chart !== 'undefined') {
+          new Chart(analyticsCanvas, {
+               type: 'bar',
+               data: {
+                    labels: chartLabels,
+                    datasets: [{
+                         data: chartValues,
+                         backgroundColor: chartColors.map(c => c + 'CC'),
+                         borderColor: chartColors,
+                         borderWidth: 2,
+                         borderRadius: 8,
+                         borderSkipped: false
+                    }]
+               },
+               options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                         legend: { display: false }
+                    },
+                    scales: {
+                         y: {
+                              beginAtZero: true,
+                              ticks: { precision: 0, font: { size: 11 } },
+                              grid: { color: 'rgba(0,0,0,0.05)' }
+                         },
+                         x: {
+                              ticks: { font: { size: 11 } },
+                              grid: { display: false }
+                         }
+                    },
+                    animation: {
+                         duration: 800,
+                         easing: 'easeOutQuart'
+                    }
+               }
+          });
+     }
+
+     // --- Chart.js: Progress Doughnut Chart ---
+     const progressCanvas = document.getElementById('progressChart');
+     if (progressCanvas && typeof Chart !== 'undefined') {
+          const gaugeColor = progress > 75 ? '#34A853' : (progress > 40 ? '#FBBC05' : '#EA4335');
+          new Chart(progressCanvas, {
+               type: 'doughnut',
+               data: {
+                    datasets: [{
+                         data: [progress, 100 - progress],
+                         backgroundColor: [gaugeColor, '#f0f0f0'],
+                         borderWidth: 0
+                    }]
+               },
+               options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    cutout: '75%',
+                    plugins: {
+                         legend: { display: false },
+                         tooltip: { enabled: false }
+                    },
+                    animation: {
+                         animateRotate: true,
+                         duration: 1000,
+                         easing: 'easeOutQuart'
+                    }
+               }
+          });
      }
 }
 

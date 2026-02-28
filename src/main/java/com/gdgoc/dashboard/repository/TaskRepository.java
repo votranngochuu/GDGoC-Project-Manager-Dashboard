@@ -25,4 +25,10 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
     long countByProjectIdAndStatus(UUID projectId, TaskStatus status);
 
     List<Task> findByProjectIdAndAssigneesId(UUID projectId, UUID assigneeId);
+
+    // Admin dashboard: count tasks by status (avoids N+1 findAll)
+    long countByStatus(TaskStatus status);
+
+    // Admin dashboard: count overdue tasks (avoids N+1 findAll)
+    long countByDeadlineBeforeAndStatusNot(LocalDate date, TaskStatus status);
 }

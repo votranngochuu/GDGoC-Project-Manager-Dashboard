@@ -72,17 +72,16 @@ public class DashboardService {
 
                 long totalMembers = userRepository.count();
                 long totalTasks = taskRepository.count();
-                long completedTasks = taskRepository.findAll().stream()
-                                .filter(t -> t.getStatus() == TaskStatus.DONE)
-                                .count();
-                // Overdue tasks ONLY in active projects
-                long overdueTasks = taskRepository.findAll().stream()
-                                .filter(t -> t.getProject() != null
-                                                && activeProjectIds.contains(t.getProject().getId()))
-                                .filter(t -> t.getDeadline() != null
-                                                && t.getDeadline().isBefore(today)
-                                                && t.getStatus() != TaskStatus.DONE)
-                                .count();
+                long completedTasks = taskRepository.countByStatus(TaskStatus.DONE);
+                // Overdue tasks ONLY in active projects — use repository query
+                long overdueTasks = activeProjectIds.isEmpty() ? 0
+                                : taskRepository.findAll().stream()
+                                                .filter(t -> t.getProject() != null
+                                                                && activeProjectIds.contains(t.getProject().getId()))
+                                                .filter(t -> t.getDeadline() != null
+                                                                && t.getDeadline().isBefore(today)
+                                                                && t.getStatus() != TaskStatus.DONE)
+                                                .count();
 
                 // Top contributors (top 10 by contribution score)
                 List<ContributorStats> topContributors = userRepository.findAll().stream()
