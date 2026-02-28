@@ -590,6 +590,18 @@ tr:hover td {
     color: var(--text-medium);
 }
 
+.badge-purple {
+    background: rgba(103, 58, 183, 0.1);
+    color: #673AB7;
+}
+
+/* Project Status badges for detail page */
+.status-planning { background: rgba(103, 58, 183, 0.1); color: #673AB7; }
+.status-active { background: rgba(var(--gdg-blue-rgb), 0.1); color: var(--gdg-blue); }
+.status-on_hold { background: rgba(var(--gdg-yellow-rgb), 0.1); color: var(--gdg-yellow); }
+.status-completed { background: rgba(var(--gdg-green-rgb), 0.1); color: var(--gdg-green); }
+.status-cancelled { background: #f0f0f0; color: var(--text-medium); }
+
 /* Empty state for categories */
 .project-empty-category {
     text-align: center;

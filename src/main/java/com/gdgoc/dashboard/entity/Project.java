@@ -31,7 +31,8 @@ public class Project {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ProjectStatus status = ProjectStatus.ACTIVE;
+    @Builder.Default
+    private ProjectStatus status = ProjectStatus.PLANNING;
 
     private java.time.LocalDate startDate;
 

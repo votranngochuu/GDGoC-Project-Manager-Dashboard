@@ -45,7 +45,8 @@ public class DashboardService {
                                 .count();
 
                 List<Project> nonCompleted = allProjects.stream()
-                                .filter(p -> p.getStatus() != ProjectStatus.COMPLETED)
+                                .filter(p -> p.getStatus() != ProjectStatus.COMPLETED
+                                                && p.getStatus() != ProjectStatus.CANCELLED)
                                 .collect(Collectors.toList());
 
                 // Projects that have started and not yet reached deadline (or have no deadline)

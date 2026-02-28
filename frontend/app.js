@@ -581,7 +581,7 @@ function renderProjectCard(p, role, category) {
           <div class="project-card ${cardClass} fade-in" data-id="${p.id}">
                <div class="project-card-top">
                     <h3 class="project-card-name">${p.name}</h3>
-                    <span class="badge badge-${p.status === 'ACTIVE' ? 'blue' : p.status === 'COMPLETED' ? 'green' : 'gray'}" style="margin-left: 10px; white-space: nowrap;">${p.status}</span>
+                    <span class="badge badge-${p.status === 'ACTIVE' ? 'blue' : p.status === 'COMPLETED' ? 'green' : p.status === 'ON_HOLD' ? 'yellow' : p.status === 'CANCELLED' ? 'gray' : 'purple'}" style="margin-left: 10px; white-space: nowrap;">${p.status === 'ON_HOLD' ? 'ON HOLD' : p.status}</span>
                </div>
                <div class="project-card-meta">
                     ${p.leaderName ? `<div class="meta-item"><i class="fas fa-user"></i> ${p.leaderName}</div>` : ''}
@@ -751,7 +751,7 @@ function renderProjectDetail(project, tasks) {
             <div style="display: flex; gap: 24px; align-items: center; padding-top: 20px; border-top: 1px solid #f5f5f5;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <span style="font-size: 13px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Status:</span>
-                    <span class="badge status-${project.status.toLowerCase()}" style="padding: 4px 12px; font-size: 12px; font-weight: 600;">${project.status}</span>
+                    <span class="badge status-${project.status.toLowerCase()}" style="padding: 4px 12px; font-size: 12px; font-weight: 600;">${project.status === 'ON_HOLD' ? 'ON HOLD' : project.status}</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <span style="font-size: 13px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Leader:</span>

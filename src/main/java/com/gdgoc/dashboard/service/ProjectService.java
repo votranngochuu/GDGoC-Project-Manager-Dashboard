@@ -77,7 +77,7 @@ public class ProjectService {
         Project project = Project.builder()
                 .name(request.getName())
                 .description(request.getDescription())
-                .status(ProjectStatus.ACTIVE)
+                .status(ProjectStatus.PLANNING)
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
                 .build();
