@@ -23,6 +23,62 @@
     transform: translateY(-1px);
 }
 
+.btn-outline {
+    background: transparent;
+    border: 1.5px solid var(--gdg-gray-300);
+    color: var(--text-medium);
+}
+
+.btn-outline:hover {
+    background: #f8f9fa;
+    border-color: var(--gdg-blue);
+    color: var(--gdg-blue);
+}
+
+.btn-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border: 1px solid #eee;
+    color: var(--text-medium);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-icon:hover {
+    background: var(--primary-light);
+    color: var(--gdg-blue);
+    border-color: var(--gdg-blue-rgb);
+}
+
+.btn-icon-danger {
+    color: var(--gdg-red);
+}
+
+.btn-icon-danger:hover {
+    background: rgba(234, 67, 53, 0.1);
+    color: var(--gdg-red);
+    border-color: var(--gdg-red);
+}
+
+.btn-text {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    transition: var(--transition);
+}
+
+.btn-text:hover {
+    opacity: 0.8;
+}
+
 .google-btn {
     width: 100%;
     max-width: 320px;

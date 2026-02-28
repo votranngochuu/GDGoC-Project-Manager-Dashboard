@@ -11,6 +11,8 @@ public class DashboardAdminResponse {
     private long totalProjects;
     private long activeProjects;
     private long completedProjects;
+    private long overdueProjects;
+    private long upcomingProjects;
     private long totalMembers;
     private long totalTasks;
     private long completedTasks;

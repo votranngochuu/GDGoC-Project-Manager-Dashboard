@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -35,17 +36,51 @@ public class DashboardService {
          * Admin dashboard: overall system statistics.
          */
         public DashboardAdminResponse getAdminDashboard() {
-                long totalProjects = projectRepository.count();
-                long activeProjects = projectRepository.countByStatus(ProjectStatus.ACTIVE);
-                long completedProjects = projectRepository.countByStatus(ProjectStatus.COMPLETED);
+                LocalDate today = LocalDate.now();
+                List<Project> allProjects = projectRepository.findAll();
+
+                long totalProjects = allProjects.size();
+                long completedProjects = allProjects.stream()
+                                .filter(p -> p.getStatus() == ProjectStatus.COMPLETED)
+                                .count();
+
+                List<Project> nonCompleted = allProjects.stream()
+                                .filter(p -> p.getStatus() != ProjectStatus.COMPLETED)
+                                .collect(Collectors.toList());
+
+                // Projects that have started and not yet reached deadline (or have no deadline)
+                List<Project> activeProjectsList = nonCompleted.stream()
+                                .filter(p -> p.getStartDate() != null && !p.getStartDate().isAfter(today)
+                                                && (p.getEndDate() == null || !p.getEndDate().isBefore(today)))
+                                .collect(Collectors.toList());
+                long activeProjects = activeProjectsList.size();
+
+                // Projects where end date has passed
+                long overdueProjects = nonCompleted.stream()
+                                .filter(p -> p.getEndDate() != null && p.getEndDate().isBefore(today))
+                                .count();
+
+                // Projects that haven't started yet (future start date)
+                long upcomingProjects = nonCompleted.stream()
+                                .filter(p -> p.getStartDate() != null && p.getStartDate().isAfter(today))
+                                .count();
+
+                // Set of active project IDs for task filtering
+                Set<UUID> activeProjectIds = activeProjectsList.stream()
+                                .map(Project::getId)
+                                .collect(Collectors.toSet());
+
                 long totalMembers = userRepository.count();
                 long totalTasks = taskRepository.count();
                 long completedTasks = taskRepository.findAll().stream()
                                 .filter(t -> t.getStatus() == TaskStatus.DONE)
                                 .count();
+                // Overdue tasks ONLY in active projects
                 long overdueTasks = taskRepository.findAll().stream()
+                                .filter(t -> t.getProject() != null
+                                                && activeProjectIds.contains(t.getProject().getId()))
                                 .filter(t -> t.getDeadline() != null
-                                                && t.getDeadline().isBefore(LocalDate.now())
+                                                && t.getDeadline().isBefore(today)
                                                 && t.getStatus() != TaskStatus.DONE)
                                 .count();
 
@@ -60,6 +95,8 @@ public class DashboardService {
                                 .totalProjects(totalProjects)
                                 .activeProjects(activeProjects)
                                 .completedProjects(completedProjects)
+                                .overdueProjects(overdueProjects)
+                                .upcomingProjects(upcomingProjects)
                                 .totalMembers(totalMembers)
                                 .totalTasks(totalTasks)
                                 .completedTasks(completedTasks)

@@ -18,17 +18,18 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
+@RequestMapping("/api/tasks")
 @RequiredArgsConstructor
 public class TaskController {
 
     private final TaskService taskService;
 
-    @GetMapping("/api/projects/{projectId}/tasks")
+    @GetMapping("/project/{projectId}")
     public ResponseEntity<List<TaskResponse>> getProjectTasks(@PathVariable UUID projectId) {
         return ResponseEntity.ok(taskService.getTasksByProject(projectId));
     }
 
-    @PostMapping("/api/projects/{projectId}/tasks")
+    @PostMapping("/project/{projectId}")
     public ResponseEntity<TaskResponse> createTask(@PathVariable UUID projectId,
             @Valid @RequestBody CreateTaskRequest request,
             @CurrentUser User currentUser) {
@@ -36,34 +37,39 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.CREATED).body(task);
     }
 
-    @GetMapping("/api/tasks/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<TaskResponse> getTask(@PathVariable UUID id) {
         return ResponseEntity.ok(taskService.getTaskById(id));
     }
 
-    @PutMapping("/api/tasks/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<TaskResponse> updateTask(@PathVariable UUID id,
             @RequestBody UpdateTaskRequest request,
             @CurrentUser User currentUser) {
         return ResponseEntity.ok(taskService.updateTask(id, request, currentUser));
     }
 
-    @PatchMapping("/api/tasks/{id}/status")
+    @PutMapping("/{id}/status")
     public ResponseEntity<TaskResponse> updateTaskStatus(@PathVariable UUID id,
             @RequestBody Map<String, String> body,
             @CurrentUser User currentUser) {
-        TaskStatus newStatus = TaskStatus.valueOf(body.get("status").toUpperCase());
+        String statusStr = body.get("status");
+        if (statusStr == null) {
+            throw new IllegalArgumentException("Status is required");
+        }
+        // Normalize status string (remove spaces and uppercase)
+        TaskStatus newStatus = TaskStatus.valueOf(statusStr.replace(" ", "_").toUpperCase());
         return ResponseEntity.ok(taskService.updateTaskStatus(id, newStatus, currentUser));
     }
 
-    @DeleteMapping("/api/tasks/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable UUID id,
             @CurrentUser User currentUser) {
         taskService.deleteTask(id, currentUser);
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/api/tasks/my")
+    @GetMapping("/my")
     public ResponseEntity<List<TaskResponse>> getMyTasks(@CurrentUser User currentUser) {
         return ResponseEntity.ok(taskService.getTasksByUser(currentUser.getId()));
     }
