@@ -11,6 +11,8 @@ public class CreateProjectRequest {
 
     private String description;
 
+    private java.util.UUID leaderId;
+
     private java.time.LocalDate startDate;
 
     private java.time.LocalDate endDate;

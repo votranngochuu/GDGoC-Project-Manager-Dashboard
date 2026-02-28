@@ -1,31 +1,9 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import {
-     getAuth,
-     GoogleAuthProvider,
      signInWithPopup,
      onAuthStateChanged,
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-import { apiRequest } from './api.js';
+import { auth, provider } from './firebase-init.js';
 import { env } from './env.js';
-
-/*
-  Replace the following config with your own Firebase project settings.
-  Copy from the Firebase console under project settings > General.
-*/
-const firebaseConfig = {
-     apiKey: env.FIREBASE_API_KEY,
-     authDomain: env.FIREBASE_AUTH_DOMAIN,
-     projectId: env.FIREBASE_PROJECT_ID,
-     storageBucket: env.FIREBASE_STORAGE_BUCKET,
-     messagingSenderId: env.FIREBASE_MESSAGING_SENDER_ID,
-     appId: env.FIREBASE_APP_ID,
-     measurementId: env.FIREBASE_MEASUREMENT_ID
-};
-
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
 
 // called when the user clicks the sign‑in button
 export async function login() {
@@ -53,6 +31,7 @@ export async function login() {
           localStorage.setItem('role', data.role);
           localStorage.setItem('userId', data.id);
           localStorage.setItem('displayName', data.displayName);
+          localStorage.setItem('userEmail', data.email);
           window.location.href = 'dashboard.html';
      } catch (e) {
           if (errorEl) errorEl.textContent = e.message;
@@ -69,6 +48,10 @@ if (signInButton) {
 // optional: react to auth state changes automatically
 onAuthStateChanged(auth, async (user) => {
      if (user) {
+          // Refresh token and store it
+          const freshToken = await user.getIdToken();
+          localStorage.setItem('accessToken', freshToken);
+
           // Only redirect if NOT already on the dashboard page
           if (!window.location.pathname.includes('dashboard.html')) {
                const role = localStorage.getItem('role');

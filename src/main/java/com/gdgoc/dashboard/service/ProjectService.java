@@ -82,6 +82,13 @@ public class ProjectService {
                 .endDate(request.getEndDate())
                 .build();
 
+        if (request.getLeaderId() != null) {
+            User leader = userRepository.findById(request.getLeaderId())
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("User not found with id: " + request.getLeaderId()));
+            project.setLeader(leader);
+        }
+
         return toResponse(projectRepository.save(project));
     }
 

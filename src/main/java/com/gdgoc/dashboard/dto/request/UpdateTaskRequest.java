@@ -5,6 +5,7 @@ import com.gdgoc.dashboard.enums.TaskStatus;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -20,5 +21,5 @@ public class UpdateTaskRequest {
 
     private LocalDate deadline;
 
-    private UUID assigneeId;
+    private List<UUID> assigneeIds;
 }

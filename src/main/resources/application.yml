@@ -10,7 +10,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/gdgoc_dashboard
     username: postgres
-    password: sbien13112002
+    password: postgres
     driver-class-name: org.postgresql.Driver
 
   jpa:

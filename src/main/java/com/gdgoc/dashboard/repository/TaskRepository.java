@@ -14,15 +14,15 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
 
     List<Task> findByProjectId(UUID projectId);
 
-    List<Task> findByAssigneeId(UUID assigneeId);
+    List<Task> findByAssigneesId(UUID assigneeId);
 
-    long countByAssigneeIdAndStatus(UUID assigneeId, TaskStatus status);
+    long countByAssigneesIdAndStatus(UUID assigneeId, TaskStatus status);
 
-    long countByAssigneeIdAndDeadlineBeforeAndStatusNot(UUID assigneeId, LocalDate date, TaskStatus status);
+    long countByAssigneesIdAndDeadlineBeforeAndStatusNot(UUID assigneeId, LocalDate date, TaskStatus status);
 
     long countByProjectId(UUID projectId);
 
     long countByProjectIdAndStatus(UUID projectId, TaskStatus status);
 
-    List<Task> findByProjectIdAndAssigneeId(UUID projectId, UUID assigneeId);
+    List<Task> findByProjectIdAndAssigneesId(UUID projectId, UUID assigneeId);
 }

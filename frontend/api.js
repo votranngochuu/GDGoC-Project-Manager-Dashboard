@@ -1,26 +1,67 @@
 import { env } from './env.js';
+import { getFreshToken } from './firebase-init.js';
 
 // reusable API helper
 const BASE_URL = env.BACKEND_URL; // e.g. 'http://localhost:8080/gdgoc_dashboard/api'
 
 export async function apiRequest(endpoint, method = 'GET', body = null) {
-     const token = localStorage.getItem('accessToken');
+     // Get a fresh token from Firebase (auto-refreshes if expired)
+     const token = await getFreshToken();
+
+     if (!token) {
+          localStorage.clear();
+          window.location.href = 'index.html';
+          return;
+     }
 
      try {
-          const response = await fetch(BASE_URL + endpoint, {
+          const options = {
                method,
                headers: {
                     'Content-Type': 'application/json',
                     Authorization: 'Bearer ' + token,
-               },
-               body: body ? JSON.stringify(body) : null,
-          });
+               }
+          };
 
-          if (response.status === 401) {
-               // token invalid or expired
-               localStorage.clear();
-               window.location.href = 'index.html';
-               return;
+          if (body && method !== 'GET') {
+               options.body = JSON.stringify(body);
+          }
+
+          const response = await fetch(BASE_URL + endpoint, options);
+
+          if (response.status === 401 || response.status === 403) {
+               // Try once more with a force-refreshed token
+               const { auth } = await import('./firebase-init.js');
+               const user = auth.currentUser;
+               if (user) {
+                    const freshToken = await user.getIdToken(/* forceRefresh */ true);
+                    localStorage.setItem('accessToken', freshToken);
+                    options.headers.Authorization = 'Bearer ' + freshToken;
+                    const retryResponse = await fetch(BASE_URL + endpoint, options);
+
+                    if (retryResponse.status === 401 || retryResponse.status === 403) {
+                         console.error('Still unauthorized after token refresh, status:', retryResponse.status);
+                         // Don't redirect on 403 - might be a permissions issue, not auth
+                         if (retryResponse.status === 401) {
+                              localStorage.clear();
+                              window.location.href = 'index.html';
+                              return;
+                         }
+                    }
+
+                    const text = await retryResponse.text();
+                    try {
+                         return text ? JSON.parse(text) : null;
+                    } catch (e) {
+                         console.error("Failed to parse JSON:", text);
+                         throw new Error("Invalid JSON response from server");
+                    }
+               } else {
+                    // No Firebase user - redirect to login
+                    localStorage.clear();
+                    window.location.href = 'index.html';
+                    return;
+               }
           }
 
           const text = await response.text();

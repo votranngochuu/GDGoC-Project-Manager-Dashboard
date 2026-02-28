@@ -38,7 +38,7 @@ public class TaskService {
     }
 
     public List<TaskResponse> getTasksByUser(UUID userId) {
-        return taskRepository.findByAssigneeId(userId).stream()
+        return taskRepository.findByAssigneesId(userId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
@@ -64,16 +64,19 @@ public class TaskService {
                 .project(project)
                 .build();
 
-        if (request.getAssigneeId() != null) {
-            User assignee = userRepository.findById(request.getAssigneeId())
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Assignee not found with id: " + request.getAssigneeId()));
-
-            if (!projectMemberRepository.existsByProjectIdAndUserId(project.getId(), assignee.getId())
-                    && (project.getLeader() == null || !project.getLeader().getId().equals(assignee.getId()))) {
-                throw new IllegalArgumentException("Assignee must be a member or leader of the project");
+        if (request.getAssigneeIds() != null && !request.getAssigneeIds().isEmpty()) {
+            List<User> assignees = userRepository.findAllById(request.getAssigneeIds());
+            if (assignees.size() != request.getAssigneeIds().size()) {
+                throw new ResourceNotFoundException("One or more assignees not found");
             }
-            task.setAssignee(assignee);
+
+            for (User assignee : assignees) {
+                if (!projectMemberRepository.existsByProjectIdAndUserId(project.getId(), assignee.getId())
+                        && (project.getLeader() == null || !project.getLeader().getId().equals(assignee.getId()))) {
+                    throw new IllegalArgumentException("Assignee must be a member or leader of the project");
+                }
+            }
+            task.setAssignees(assignees);
         }
 
         return toResponse(taskRepository.save(task));
@@ -99,17 +102,20 @@ public class TaskService {
         if (request.getDeadline() != null) {
             task.setDeadline(request.getDeadline());
         }
-        if (request.getAssigneeId() != null) {
-            User assignee = userRepository.findById(request.getAssigneeId())
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Assignee not found with id: " + request.getAssigneeId()));
-
-            if (!projectMemberRepository.existsByProjectIdAndUserId(task.getProject().getId(), assignee.getId())
-                    && (task.getProject().getLeader() == null
-                            || !task.getProject().getLeader().getId().equals(assignee.getId()))) {
-                throw new IllegalArgumentException("Assignee must be a member or leader of the project");
+        if (request.getAssigneeIds() != null) {
+            List<User> assignees = userRepository.findAllById(request.getAssigneeIds());
+            if (assignees.size() != request.getAssigneeIds().size()) {
+                throw new ResourceNotFoundException("One or more assignees not found");
             }
-            task.setAssignee(assignee);
+
+            for (User assignee : assignees) {
+                if (!projectMemberRepository.existsByProjectIdAndUserId(task.getProject().getId(), assignee.getId())
+                        && (task.getProject().getLeader() == null
+                                || !task.getProject().getLeader().getId().equals(assignee.getId()))) {
+                    throw new IllegalArgumentException("Assignee must be a member or leader of the project");
+                }
+            }
+            task.setAssignees(assignees);
         }
 
         return toResponse(taskRepository.save(task));
@@ -120,7 +126,8 @@ public class TaskService {
         Task task = findTaskOrThrow(id);
 
         // Allow assignees to update their own task status, plus leaders and admins
-        boolean isAssignee = task.getAssignee() != null && task.getAssignee().getId().equals(currentUser.getId());
+        boolean isAssignee = task.getAssignees() != null
+                && task.getAssignees().stream().anyMatch(u -> u.getId().equals(currentUser.getId()));
         boolean isLeaderOrAdmin = currentUser.getRole() == Role.ADMIN
                 || (task.getProject().getLeader() != null
                         && task.getProject().getLeader().getId().equals(currentUser.getId()));
@@ -164,7 +171,10 @@ public class TaskService {
                 .priority(task.getPriority())
                 .deadline(task.getDeadline())
                 .projectId(task.getProject().getId())
-                .assignee(AuthService.toResponse(task.getAssignee()))
+                .assignees(task.getAssignees() == null ? null
+                        : task.getAssignees().stream()
+                                .map(AuthService::toResponse)
+                                .collect(Collectors.toList()))
                 .createdAt(task.getCreatedAt())
                 .build();
     }

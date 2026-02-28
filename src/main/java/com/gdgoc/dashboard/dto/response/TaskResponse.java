@@ -7,6 +7,7 @@ import lombok.Data;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -19,6 +20,6 @@ public class TaskResponse {
     private TaskPriority priority;
     private LocalDate deadline;
     private UUID projectId;
-    private UserResponse assignee;
+    private List<UserResponse> assignees;
     private LocalDateTime createdAt;
 }

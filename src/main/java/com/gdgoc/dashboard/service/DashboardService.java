@@ -26,172 +26,173 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DashboardService {
 
-    private final ProjectRepository projectRepository;
-    private final ProjectMemberRepository projectMemberRepository;
-    private final TaskRepository taskRepository;
-    private final UserRepository userRepository;
+        private final ProjectRepository projectRepository;
+        private final ProjectMemberRepository projectMemberRepository;
+        private final TaskRepository taskRepository;
+        private final UserRepository userRepository;
 
-    /**
-     * Admin dashboard: overall system statistics.
-     */
-    public DashboardAdminResponse getAdminDashboard() {
-        long totalProjects = projectRepository.count();
-        long activeProjects = projectRepository.countByStatus(ProjectStatus.ACTIVE);
-        long completedProjects = projectRepository.countByStatus(ProjectStatus.COMPLETED);
-        long totalMembers = userRepository.count();
-        long totalTasks = taskRepository.count();
-        long completedTasks = taskRepository.findAll().stream()
-                .filter(t -> t.getStatus() == TaskStatus.DONE)
-                .count();
-        long overdueTasks = taskRepository.findAll().stream()
-                .filter(t -> t.getDeadline() != null
-                        && t.getDeadline().isBefore(LocalDate.now())
-                        && t.getStatus() != TaskStatus.DONE)
-                .count();
+        /**
+         * Admin dashboard: overall system statistics.
+         */
+        public DashboardAdminResponse getAdminDashboard() {
+                long totalProjects = projectRepository.count();
+                long activeProjects = projectRepository.countByStatus(ProjectStatus.ACTIVE);
+                long completedProjects = projectRepository.countByStatus(ProjectStatus.COMPLETED);
+                long totalMembers = userRepository.count();
+                long totalTasks = taskRepository.count();
+                long completedTasks = taskRepository.findAll().stream()
+                                .filter(t -> t.getStatus() == TaskStatus.DONE)
+                                .count();
+                long overdueTasks = taskRepository.findAll().stream()
+                                .filter(t -> t.getDeadline() != null
+                                                && t.getDeadline().isBefore(LocalDate.now())
+                                                && t.getStatus() != TaskStatus.DONE)
+                                .count();
 
-        // Top contributors (top 10 by contribution score)
-        List<ContributorStats> topContributors = userRepository.findAll().stream()
-                .map(this::calculateContributorStats)
-                .sorted(Comparator.comparingInt(ContributorStats::getContributionScore).reversed())
-                .limit(10)
-                .collect(Collectors.toList());
+                // Top contributors (top 10 by contribution score)
+                List<ContributorStats> topContributors = userRepository.findAll().stream()
+                                .map(this::calculateContributorStats)
+                                .sorted(Comparator.comparingInt(ContributorStats::getContributionScore).reversed())
+                                .limit(10)
+                                .collect(Collectors.toList());
 
-        return DashboardAdminResponse.builder()
-                .totalProjects(totalProjects)
-                .activeProjects(activeProjects)
-                .completedProjects(completedProjects)
-                .totalMembers(totalMembers)
-                .totalTasks(totalTasks)
-                .completedTasks(completedTasks)
-                .overdueTasks(overdueTasks)
-                .topContributors(topContributors)
-                .build();
-    }
-
-    /**
-     * Leader dashboard: project-level statistics.
-     */
-    public DashboardLeaderResponse getLeaderDashboard(UUID projectId, User currentUser) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
-
-        // Validate access: must be leader of this project or admin
-        boolean isLeader = project.getLeader() != null
-                && project.getLeader().getId().equals(currentUser.getId());
-        if (currentUser.getRole() != Role.ADMIN && !isLeader) {
-            throw new UnauthorizedException("You are not the leader of this project");
+                return DashboardAdminResponse.builder()
+                                .totalProjects(totalProjects)
+                                .activeProjects(activeProjects)
+                                .completedProjects(completedProjects)
+                                .totalMembers(totalMembers)
+                                .totalTasks(totalTasks)
+                                .completedTasks(completedTasks)
+                                .overdueTasks(overdueTasks)
+                                .topContributors(topContributors)
+                                .build();
         }
 
-        long memberCount = projectMemberRepository.countByProjectId(projectId);
-        long totalTasks = taskRepository.countByProjectId(projectId);
-        long todoTasks = taskRepository.countByProjectIdAndStatus(projectId, TaskStatus.TODO);
-        long inProgressTasks = taskRepository.countByProjectIdAndStatus(projectId, TaskStatus.IN_PROGRESS);
-        long completedTasks = taskRepository.countByProjectIdAndStatus(projectId, TaskStatus.DONE);
-        long overdueTasks = taskRepository.findByProjectId(projectId).stream()
-                .filter(t -> t.getDeadline() != null
-                        && t.getDeadline().isBefore(LocalDate.now())
-                        && t.getStatus() != TaskStatus.DONE)
-                .count();
+        /**
+         * Leader dashboard: project-level statistics.
+         */
+        public DashboardLeaderResponse getLeaderDashboard(UUID projectId, User currentUser) {
+                Project project = projectRepository.findById(projectId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Project not found with id: " + projectId));
 
-        // Member performances in this project
-        List<ContributorStats> memberPerformances = projectMemberRepository.findByProjectId(projectId)
-                .stream()
-                .map(pm -> calculateContributorStatsForProject(pm.getUser(), projectId))
-                .sorted(Comparator.comparingInt(ContributorStats::getContributionScore).reversed())
-                .collect(Collectors.toList());
+                // Validate access: must be leader of this project or admin
+                boolean isLeader = project.getLeader() != null
+                                && project.getLeader().getId().equals(currentUser.getId());
+                if (currentUser.getRole() != Role.ADMIN && !isLeader) {
+                        throw new UnauthorizedException("You are not the leader of this project");
+                }
 
-        return DashboardLeaderResponse.builder()
-                .projectId(projectId)
-                .projectName(project.getName())
-                .memberCount(memberCount)
-                .totalTasks(totalTasks)
-                .todoTasks(todoTasks)
-                .inProgressTasks(inProgressTasks)
-                .completedTasks(completedTasks)
-                .overdueTasks(overdueTasks)
-                .memberPerformances(memberPerformances)
-                .build();
-    }
+                long memberCount = projectMemberRepository.countByProjectId(projectId);
+                long totalTasks = taskRepository.countByProjectId(projectId);
+                long todoTasks = taskRepository.countByProjectIdAndStatus(projectId, TaskStatus.TODO);
+                long inProgressTasks = taskRepository.countByProjectIdAndStatus(projectId, TaskStatus.IN_PROGRESS);
+                long completedTasks = taskRepository.countByProjectIdAndStatus(projectId, TaskStatus.DONE);
+                long overdueTasks = taskRepository.findByProjectId(projectId).stream()
+                                .filter(t -> t.getDeadline() != null
+                                                && t.getDeadline().isBefore(LocalDate.now())
+                                                && t.getStatus() != TaskStatus.DONE)
+                                .count();
 
-    /**
-     * Member dashboard: personal performance stats.
-     */
-    public DashboardMemberResponse getMemberDashboard(User currentUser) {
-        UUID userId = currentUser.getId();
+                // Member performances in this project
+                List<ContributorStats> memberPerformances = projectMemberRepository.findByProjectId(projectId)
+                                .stream()
+                                .map(pm -> calculateContributorStatsForProject(pm.getUser(), projectId))
+                                .sorted(Comparator.comparingInt(ContributorStats::getContributionScore).reversed())
+                                .collect(Collectors.toList());
 
-        long totalAssigned = taskRepository.findByAssigneeId(userId).size();
-        long completedTasks = taskRepository.countByAssigneeIdAndStatus(userId, TaskStatus.DONE);
-        long inProgressTasks = taskRepository.countByAssigneeIdAndStatus(userId, TaskStatus.IN_PROGRESS);
-        long todoTasks = taskRepository.countByAssigneeIdAndStatus(userId, TaskStatus.TODO);
-        long overdueTasks = taskRepository.countByAssigneeIdAndDeadlineBeforeAndStatusNot(
-                userId, LocalDate.now(), TaskStatus.DONE);
+                return DashboardLeaderResponse.builder()
+                                .projectId(projectId)
+                                .projectName(project.getName())
+                                .memberCount(memberCount)
+                                .totalTasks(totalTasks)
+                                .todoTasks(todoTasks)
+                                .inProgressTasks(inProgressTasks)
+                                .completedTasks(completedTasks)
+                                .overdueTasks(overdueTasks)
+                                .memberPerformances(memberPerformances)
+                                .build();
+        }
 
-        double completionRate = totalAssigned > 0
-                ? (double) completedTasks / totalAssigned * 100
-                : 0;
+        /**
+         * Member dashboard: personal performance stats.
+         */
+        public DashboardMemberResponse getMemberDashboard(User currentUser) {
+                UUID userId = currentUser.getId();
 
-        int contributionScore = calculateScore(completedTasks, overdueTasks);
+                long totalAssigned = taskRepository.findByAssigneesId(userId).size();
+                long completedTasks = taskRepository.countByAssigneesIdAndStatus(userId, TaskStatus.DONE);
+                long inProgressTasks = taskRepository.countByAssigneesIdAndStatus(userId, TaskStatus.IN_PROGRESS);
+                long todoTasks = taskRepository.countByAssigneesIdAndStatus(userId, TaskStatus.TODO);
+                long overdueTasks = taskRepository.countByAssigneesIdAndDeadlineBeforeAndStatusNot(
+                                userId, LocalDate.now(), TaskStatus.DONE);
 
-        return DashboardMemberResponse.builder()
-                .totalAssigned(totalAssigned)
-                .completedTasks(completedTasks)
-                .inProgressTasks(inProgressTasks)
-                .todoTasks(todoTasks)
-                .overdueTasks(overdueTasks)
-                .completionRate(Math.round(completionRate * 100.0) / 100.0)
-                .contributionScore(contributionScore)
-                .build();
-    }
+                double completionRate = totalAssigned > 0
+                                ? (double) completedTasks / totalAssigned * 100
+                                : 0;
 
-    // --- Contribution Score Logic ---
+                int contributionScore = calculateScore(completedTasks, overdueTasks);
 
-    /**
-     * Contribution score formula:
-     * score = (completedTasks × 10) − (overdueTasks × 5)
-     *
-     * Computed on-the-fly for freshness. Minimum score is 0.
-     */
-    private int calculateScore(long completedTasks, long overdueTasks) {
-        int score = (int) (completedTasks * 10 - overdueTasks * 5);
-        return Math.max(score, 0);
-    }
+                return DashboardMemberResponse.builder()
+                                .totalAssigned(totalAssigned)
+                                .completedTasks(completedTasks)
+                                .inProgressTasks(inProgressTasks)
+                                .todoTasks(todoTasks)
+                                .overdueTasks(overdueTasks)
+                                .completionRate(Math.round(completionRate * 100.0) / 100.0)
+                                .contributionScore(contributionScore)
+                                .build();
+        }
 
-    private ContributorStats calculateContributorStats(User user) {
-        UUID userId = user.getId();
-        long completed = taskRepository.countByAssigneeIdAndStatus(userId, TaskStatus.DONE);
-        long overdue = taskRepository.countByAssigneeIdAndDeadlineBeforeAndStatusNot(
-                userId, LocalDate.now(), TaskStatus.DONE);
-        long total = taskRepository.findByAssigneeId(userId).size();
-        double completionRate = total > 0 ? (double) completed / total * 100 : 0;
+        // --- Contribution Score Logic ---
 
-        return ContributorStats.builder()
-                .userId(userId)
-                .displayName(user.getDisplayName())
-                .completedTasks(completed)
-                .overdueTasks(overdue)
-                .completionRate(Math.round(completionRate * 100.0) / 100.0)
-                .contributionScore(calculateScore(completed, overdue))
-                .build();
-    }
+        /**
+         * Contribution score formula:
+         * score = (completedTasks × 10) − (overdueTasks × 5)
+         *
+         * Computed on-the-fly for freshness. Minimum score is 0.
+         */
+        private int calculateScore(long completedTasks, long overdueTasks) {
+                int score = (int) (completedTasks * 10 - overdueTasks * 5);
+                return Math.max(score, 0);
+        }
 
-    private ContributorStats calculateContributorStatsForProject(User user, UUID projectId) {
-        var tasks = taskRepository.findByProjectIdAndAssigneeId(projectId, user.getId());
-        long completed = tasks.stream().filter(t -> t.getStatus() == TaskStatus.DONE).count();
-        long overdue = tasks.stream()
-                .filter(t -> t.getDeadline() != null
-                        && t.getDeadline().isBefore(LocalDate.now())
-                        && t.getStatus() != TaskStatus.DONE)
-                .count();
-        long total = tasks.size();
-        double completionRate = total > 0 ? (double) completed / total * 100 : 0;
+        private ContributorStats calculateContributorStats(User user) {
+                UUID userId = user.getId();
+                long completed = taskRepository.countByAssigneesIdAndStatus(userId, TaskStatus.DONE);
+                long overdue = taskRepository.countByAssigneesIdAndDeadlineBeforeAndStatusNot(
+                                userId, LocalDate.now(), TaskStatus.DONE);
+                long total = taskRepository.findByAssigneesId(userId).size();
+                double completionRate = total > 0 ? (double) completed / total * 100 : 0;
 
-        return ContributorStats.builder()
-                .userId(user.getId())
-                .displayName(user.getDisplayName())
-                .completedTasks(completed)
-                .overdueTasks(overdue)
-                .completionRate(Math.round(completionRate * 100.0) / 100.0)
-                .contributionScore(calculateScore(completed, overdue))
-                .build();
-    }
+                return ContributorStats.builder()
+                                .userId(userId)
+                                .displayName(user.getDisplayName())
+                                .completedTasks(completed)
+                                .overdueTasks(overdue)
+                                .completionRate(Math.round(completionRate * 100.0) / 100.0)
+                                .contributionScore(calculateScore(completed, overdue))
+                                .build();
+        }
+
+        private ContributorStats calculateContributorStatsForProject(User user, UUID projectId) {
+                var tasks = taskRepository.findByProjectIdAndAssigneesId(projectId, user.getId());
+                long completed = tasks.stream().filter(t -> t.getStatus() == TaskStatus.DONE).count();
+                long overdue = tasks.stream()
+                                .filter(t -> t.getDeadline() != null
+                                                && t.getDeadline().isBefore(LocalDate.now())
+                                                && t.getStatus() != TaskStatus.DONE)
+                                .count();
+                long total = tasks.size();
+                double completionRate = total > 0 ? (double) completed / total * 100 : 0;
+
+                return ContributorStats.builder()
+                                .userId(user.getId())
+                                .displayName(user.getDisplayName())
+                                .completedTasks(completed)
+                                .overdueTasks(overdue)
+                                .completionRate(Math.round(completionRate * 100.0) / 100.0)
+                                .contributionScore(calculateScore(completed, overdue))
+                                .build();
+        }
 }
