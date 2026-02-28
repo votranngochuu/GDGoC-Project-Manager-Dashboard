@@ -1,0 +1,51 @@
+:root {
+    /* GDG Brand Colors */
+    --gdg-blue: #4285F4;
+    --gdg-red: #EA4335;
+    --gdg-yellow: #FBBC05;
+    --gdg-green: #34A853;
+    --gdg-dark: #202124;
+
+    /* RGB for Translucency */
+    --gdg-blue-rgb: 66, 133, 244;
+    --gdg-red-rgb: 234, 67, 53;
+    --gdg-yellow-rgb: 251, 188, 5;
+    --gdg-green-rgb: 52, 168, 83;
+
+    /* Premium Layout Tokens (Donezo-style) */
+    --primary: var(--gdg-blue);
+    --primary-light: rgba(66, 133, 244, 0.1);
+
+    --text-dark: #1e1e1e;
+    --text-medium: #555555;
+    --text-light: #777777;
+
+    --bg-body: #f6f8fb;
+    --bg-card: #ffffff;
+    --border-color: #f2f4f7;
+
+    --radius-xl: 30px;
+    --radius-lg: 18px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+
+    --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.04);
+    --shadow-card: 0 5px 20px rgba(0, 0, 0, 0.04);
+    --shadow-premium: 0 10px 40px rgba(0, 0, 0, 0.05);
+
+    --transition: all 0.2s ease;
+
+    /* Legacy fallback variables for index.html */
+    --gdg-gray-100: #f8f9fa;
+    --gdg-gray-300: #dadce0;
+    --gdg-gray-600: #5f6368;
+    --bg-primary: var(--bg-card);
+    --bg-secondary: var(--bg-body);
+    --text-primary: var(--gdg-dark);
+    --text-secondary: var(--text-medium);
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --shadow-sm: var(--shadow-card);
+    --shadow-md: var(--shadow-soft);
+    --shadow-lg: var(--shadow-premium);
+}
