@@ -63,6 +63,29 @@ async function loadDashboard() {
           } else {
                const projects = await apiRequest('/projects');
                data.recentItems = (projects || []).slice(0, 3).map(p => ({ id: p.id, name: p.name, color: 'var(--gdg-green)' }));
+
+               // Fallback: Recalculate stats on frontend to ensure perfect match with project list
+               if (role === 'ADMIN' && projects) {
+                    const now = new Date();
+                    now.setHours(0, 0, 0, 0);
+
+                    let activeCount = 0;
+                    let upcomingCount = 0;
+                    let overdueCount = 0;
+
+                    projects.forEach(p => {
+                         const cat = getProjectCategory(p, now);
+                         if (cat === 'active') activeCount++;
+                         else if (cat === 'upcoming') upcomingCount++;
+                         else if (cat === 'overdue') overdueCount++;
+                    });
+
+                    data.activeProjects = activeCount;
+                    data.upcomingProjects = upcomingCount;
+                    data.overdueProjects = overdueCount;
+                    data.totalProjects = projects.length;
+                    console.log("Dashboard stats recalculated:", { activeCount, upcomingCount, overdueCount });
+               }
           }
 
           renderDashboard(role, data);
@@ -89,26 +112,47 @@ function renderDashboard(role, data) {
 
      if (role === 'ADMIN') {
           html += `
-                <div class="card card-stat accent-blue"><h4>Total Projects</h4><h2>${data.totalProjects || 0}</h2></div>
-                <div class="card card-stat accent-red"><h4>Active Projects</h4><h2>${data.activeProjects || 0}</h2></div>
-                <div class="card card-stat accent-yellow"><h4>Total Tasks</h4><h2>${data.totalTasks || 0}</h2></div>
-                <div class="card card-stat accent-green"><h4>Total Members</h4><h2>${data.totalMembers || 0}</h2></div>
+                <div class="card card-stat accent-blue">
+                    <h4>Tổng số dự án</h4>
+                    <h2>${data.totalProjects || 0}</h2>
+                </div>
+                <div class="card card-stat accent-green">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <h4 style="margin:0;">Dự án đang làm</h4>
+                        <i class="fas fa-info-circle" style="color:var(--text-light); font-size:12px; cursor:help;" title="Dự án có ngày bắt đầu đã qua và chưa tới hạn kết thúc"></i>
+                    </div>
+                    <h2>${data.activeProjects || 0}</h2>
+                </div>
+                <div class="card card-stat accent-yellow">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <h4 style="margin:0;">Dự án sắp tới</h4>
+                        <i class="fas fa-info-circle" style="color:var(--text-light); font-size:12px; cursor:help;" title="Các dự án chuẩn bị đến ngày bắt đầu"></i>
+                    </div>
+                    <h2>${data.upcomingProjects || 0}</h2>
+                </div>
+                <div class="card card-stat accent-red">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <h4 style="margin:0;">Các task bị trễ hạn</h4>
+                        <i class="fas fa-info-circle" style="color:var(--text-light); font-size:12px; cursor:help;" title="Số lượng công việc đã quá hạn trong các dự án đang hoạt động"></i>
+                    </div>
+                    <h2>${data.overdueTasks || 0}</h2>
+                </div>
           `;
      } else if (role === 'LEADER') {
           html += `
-                <div class="card card-stat accent-blue"><h4>Project Tasks</h4><h2>${data.totalTasks || 0}</h2></div>
-                <div class="card card-stat accent-green"><h4>Completed</h4><h2>${data.completedTasks || 0}</h2></div>
-                <div class="card card-stat accent-yellow"><h4>In Progress</h4><h2>${data.inProgressTasks || 0}</h2></div>
-                <div class="card card-stat accent-red"><h4>Overdue Tasks</h4><h2>${data.overdueTasks || 0}</h2></div>
+                <div class="card card-stat accent-blue"><h4>Công việc dự án</h4><h2>${data.totalTasks || 0}</h2></div>
+                <div class="card card-stat accent-green"><h4>Đã hoàn thành</h4><h2>${data.completedTasks || 0}</h2></div>
+                <div class="card card-stat accent-yellow"><h4>Đang làm</h4><h2>${data.inProgressTasks || 0}</h2></div>
+                <div class="card card-stat accent-red"><h4>Việc trễ hạn</h4><h2>${data.overdueTasks || 0}</h2></div>
           `;
      } else { // MEMBER
           const totalMemberTasks = (data.completedTasks || 0) + (data.inProgressTasks || 0) + (data.todoTasks || 0) + (data.overdueTasks || 0);
           const successRate = totalMemberTasks > 0 ? Math.round((data.completedTasks / totalMemberTasks) * 100) : 0;
           html += `
-                <div class="card card-stat accent-green"><h4>My Completed</h4><h2>${data.completedTasks || 0}</h2></div>
-                <div class="card card-stat accent-blue"><h4>Success Rate</h4><h2>${successRate}%</h2></div>
-                <div class="card card-stat accent-yellow"><h4>Pending</h4><h2>${data.inProgressTasks || 0}</h2></div>
-                <div class="card card-stat accent-red"><h4>Overdue</h4><h2>${data.overdueTasks || 0}</h2></div>
+                <div class="card card-stat accent-green"><h4>Việc hoàn thành</h4><h2>${data.completedTasks || 0}</h2></div>
+                <div class="card card-stat accent-blue"><h4>Tỷ lệ thành công</h4><h2>${successRate}%</h2></div>
+                <div class="card card-stat accent-yellow"><h4>Đang chờ</h4><h2>${data.inProgressTasks || 0}</h2></div>
+                <div class="card card-stat accent-red"><h4>Trễ hạn</h4><h2>${data.overdueTasks || 0}</h2></div>
           `;
      }
      html += `</div>`;
@@ -116,22 +160,45 @@ function renderDashboard(role, data) {
      // --- ROW 2: ANALYTICS & RECENT (Customized) ---
      html += `<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 25px;">`;
 
-     // Analytics Bar (Unified style)
+     // Analytics Bar (Dynamic distribution)
      let analyticsTitle = "System Analytics";
-     if (role === 'LEADER') analyticsTitle = "Team Performance Trends";
-     else if (role === 'MEMBER') analyticsTitle = "My Productivity Trends";
+     let bars = [];
+
+     if (role === 'ADMIN') {
+          analyticsTitle = "Phân phối hệ thống";
+          const maxVal = Math.max(data.totalProjects || 0, data.totalTasks || 0, 1);
+          bars = [
+               { label: 'Tổng số', value: data.totalProjects || 0, color: 'var(--gdg-blue)', height: ((data.totalProjects || 0) / maxVal) * 100 },
+               { label: 'Đang làm', value: data.activeProjects || 0, color: 'var(--gdg-green)', height: ((data.activeProjects || 0) / maxVal) * 100 },
+               { label: 'Sắp tới', value: data.upcomingProjects || 0, color: 'var(--gdg-blue)', height: ((data.upcomingProjects || 0) / maxVal) * 100 },
+               { label: 'Quá hạn', value: data.overdueProjects || 0, color: 'var(--gdg-red)', height: ((data.overdueProjects || 0) / maxVal) * 100 },
+               { label: 'Công việc', value: data.totalTasks || 0, color: 'var(--gdg-yellow)', height: ((data.totalTasks || 0) / maxVal) * 100 }
+          ];
+     } else {
+          analyticsTitle = role === 'LEADER' ? "Dòng chảy công việc" : "Khối lượng công việc";
+          const tasks = [data.todoTasks || 0, data.inProgressTasks || 0, data.completedTasks || 0, data.overdueTasks || 0];
+          const maxVal = Math.max(...tasks, 1);
+          bars = [
+               { label: 'Cần làm', value: data.todoTasks || 0, color: 'var(--gdg-blue)', height: ((data.todoTasks || 0) / maxVal) * 100 },
+               { label: 'Đang làm', value: data.inProgressTasks || 0, color: 'var(--gdg-yellow)', height: ((data.inProgressTasks || 0) / maxVal) * 100 },
+               { label: 'Hoàn thành', value: data.completedTasks || 0, color: 'var(--gdg-green)', height: ((data.completedTasks || 0) / maxVal) * 100 },
+               { label: 'Trễ hạn', value: data.overdueTasks || 0, color: 'var(--gdg-red)', height: ((data.overdueTasks || 0) / maxVal) * 100 }
+          ];
+     }
 
      html += `
           <div class="card">
                <h3 style="margin:0">${analyticsTitle}</h3>
-               <div class="analytics-bars">
-                    <div class="bar green" style="height: 60%;"></div>
-                    <div class="bar yellow" style="height: 40%;"></div>
-                    <div class="bar blue" style="height: 80%;"></div>
-                    <div class="bar red" style="height: 50%;"></div>
-                    <div class="bar green" style="height: 70%;"></div>
-                    <div class="bar yellow" style="height: 30%;"></div>
-                    <div class="bar blue" style="height: 90%;"></div>
+               <div class="analytics-bars" style="display: flex; align-items: flex-end; gap: 12px; height: 160px; margin-top: 20px; padding: 10px 0;">
+                    ${bars.map(b => `
+                         <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                              <div class="bar-container" style="width: 100%; height: 120px; display: flex; align-items: flex-end; justify-content: center; position: relative;">
+                                   <div class="bar-value" style="position: absolute; top: -20px; font-size: 11px; font-weight: 600;">${b.value}</div>
+                                   <div class="bar" style="width: 100%; height: ${b.height}%; background: ${b.color}; border-radius: 6px; transition: height 0.3s ease; cursor: pointer;" title="${b.label}: ${b.value}"></div>
+                              </div>
+                              <div style="font-size: 10px; color: var(--text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; text-align: center;">${b.label}</div>
+                         </div>
+                    `).join('')}
                </div>
           </div>
      `;
@@ -160,21 +227,28 @@ function renderDashboard(role, data) {
      html += `<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">`;
 
      // Team / Collaboration
+     const performances = role === 'ADMIN' ? (data.topContributors || []) : (data.memberPerformances || []);
      html += `
           <div class="card">
-               <h3 style="margin-bottom: 15px;">${role === 'MEMBER' ? 'Top Collaborators' : 'Team Performance'}</h3>
+               <h3 style="margin-bottom: 20px;">${role === 'MEMBER' ? 'Top Collaborators' : 'Performance Rankings'}</h3>
                <div class="team-list">
-                    ${data.memberPerformances && data.memberPerformances.length > 0 ?
-               data.memberPerformances.map(m => `
-                               <div class="team-item">
-                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">${(m.displayName || 'U').charAt(0).toUpperCase()}</div>
-                                    <div style="flex: 1">
-                                         <div style="font-size: 13px; font-weight: 600;">${m.displayName || 'Unknown'}</div>
-                                         <div style="font-size: 11px; color: var(--text-light); text-transform: capitalize;">${m.role?.toLowerCase() || 'Member'}</div>
-                                    </div>
-                                    <span class="badge ${m.completedTasks > 0 ? 'badge-green' : 'badge-yellow'}">${m.completedTasks || 0} tasks</span>
-                               </div>
-                         `).join('') : '<p style="font-size: 13px; color: var(--text-light);">No performance data.</p>'}
+                    ${performances.length > 0 ?
+               performances.map(m => `
+                                <div class="team-item" style="margin-bottom: 15px;">
+                                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                                          <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;">${(m.displayName || 'U').charAt(0).toUpperCase()}</div>
+                                          <div style="flex: 1; font-size: 13px; font-weight: 600;">${m.displayName || 'Unknown'}</div>
+                                          <div style="font-size: 11px; font-weight: 700;">${m.contributionScore || 0} pts</div>
+                                     </div>
+                                     <div style="width: 100%; height: 4px; background: #eee; border-radius: 2px; overflow: hidden;">
+                                          <div style="width: ${m.completionRate || 0}%; height: 100%; background: ${m.completionRate > 80 ? 'var(--gdg-green)' : (m.completionRate > 40 ? 'var(--gdg-yellow)' : 'var(--gdg-red)')};"></div>
+                                     </div>
+                                     <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+                                          <span style="font-size: 10px; color: var(--text-light);">${m.completedTasks || 0} Done</span>
+                                          <span style="font-size: 10px; color: var(--text-light);">${Math.round(m.completionRate || 0)}%</span>
+                                     </div>
+                                </div>
+                          `).join('') : '<p style="font-size: 13px; color: var(--text-light);">No performance data available.</p>'}
                </div>
           </div>
      `;
@@ -187,15 +261,20 @@ function renderDashboard(role, data) {
      const progress = role === 'ADMIN' ? (data.overallCompletion || 0) :
           (data.totalTasks ? Math.round((data.completedTasks / data.totalTasks) * 100) : 0);
 
+     const gaugeColor = progress > 75 ? 'var(--gdg-green)' : (progress > 40 ? 'var(--gdg-yellow)' : 'var(--gdg-red)');
+
      html += `
-          <div class="card" style="text-align: center;">
+          <div class="card" style="text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                <h3>${progressTitle}</h3>
-               <div style="margin: 20px auto; width: 140px; height: 140px; border-radius: 50%; background: conic-gradient(var(--gdg-green) ${progress}%, #eee 0%); display: flex; align-items: center; justify-content: center;">
-                    <div style="width: 110px; height: 110px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: var(--text-dark);">
-                         ${progress}%
+               <div style="margin: 20px auto; width: 140px; height: 140px; border-radius: 50%; background: conic-gradient(${gaugeColor} ${progress}%, #eee 0%); display: flex; align-items: center; justify-content: center; position: relative; box-shadow: inset 0 0 10px rgba(0,0,0,0.05);">
+                    <div style="width: 110px; height: 110px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; color: var(--text-dark); box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                         ${Math.round(progress)}<span style="font-size: 14px; font-weight: 600; margin-left: 2px;">%</span>
                     </div>
                </div>
-               <div style="font-size: 12px; color: var(--text-light);">${role === 'MEMBER' ? 'Target: 100% Achievement' : 'Overall Completion Rank'}</div>
+               <div style="font-size: 12px; color: var(--text-light); font-weight: 500;">
+                    ${role === 'MEMBER' ? 'Target: 100% Achievement' :
+               (role === 'ADMIN' ? 'Overall Completion Status' : 'Tasks Completed vs Total')}
+               </div>
           </div>
      `;
 
@@ -258,7 +337,16 @@ function renderDashboard(role, data) {
      }
 }
 
-function showCreateProjectModal() {
+async function showCreateProjectModal() {
+     let users = [];
+     try {
+          users = await apiRequest('/users') || [];
+     } catch (err) {
+          console.error("Failed to fetch users for leader selection:", err);
+     }
+
+     const leaderOptions = users.map(u => `<option value="${u.id}">${u.displayName || u.email} (${u.role})</option>`).join('');
+
      const modal = document.createElement('div');
      modal.className = 'modal-overlay';
      modal.innerHTML = `
@@ -284,6 +372,13 @@ function showCreateProjectModal() {
                               <input type="date" id="modal-project-end" class="form-input">
                          </div>
                     </div>
+                    <div class="form-group">
+                         <label>Leader Dự Án <span style="color: red;">*</span></label>
+                         <select id="modal-project-leader" class="form-input">
+                              <option value="">-- Chọn Leader --</option>
+                              ${leaderOptions}
+                         </select>
+                    </div>
                     <div class="form-group" style="margin-bottom: 0;">
                          <label>Mô tả chi tiết</label>
                          <textarea id="modal-project-desc" class="form-input" style="height: 100px; resize: none;" placeholder="Project này về mảng nào?..."></textarea>
@@ -306,13 +401,15 @@ function showCreateProjectModal() {
           const description = document.getElementById('modal-project-desc').value.trim();
           const startDate = document.getElementById('modal-project-start').value;
           const endDate = document.getElementById('modal-project-end').value;
+          const leaderId = document.getElementById('modal-project-leader').value;
 
           if (!name) return alert('Vui lòng nhập tên project.');
+          if (!leaderId) return alert('Vui lòng chọn leader cho dự án.');
           if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
                return alert('Ngày kết thúc phải sau ngày bắt đầu.');
           }
 
-          const payload = { name, description };
+          const payload = { name, description, leaderId };
           if (startDate) payload.startDate = startDate;
           if (endDate) payload.endDate = endDate;
 
@@ -500,7 +597,7 @@ function renderProjectList(projects, isFiltering = false) {
      let html = `
           <div class="header" style="margin-bottom: 20px;">
                <h1 style="margin: 0;">Projects</h1>
-               ${role === 'ADMIN' ? '<button id="create-project" class="btn btn-create-project"><i class="fas fa-plus"></i> Tạo Project Khởi Nghiệp</button>' : ''}
+               ${role === 'ADMIN' ? '<button id="create-project" class="btn btn-create-project"><i class="fas fa-plus"></i> Tạo Project</button>' : ''}
           </div>
           <div class="project-controls">
                <div class="search-box">
@@ -587,84 +684,141 @@ async function loadProjectDetail(id) {
 
 function renderProjectDetail(project, tasks) {
      let html = `
-        <div class="header">
-            <h1>${project.name}</h1>
-            <div class="buttons">
-                <button class="btn btn-add-task" id="add-task-btn"><i class="fas fa-plus"></i> Add Task</button>
+        <div class="project-detail-header fade-in" style="background: white; padding: 30px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); margin-bottom: 30px; border: 1px solid var(--border-color);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                <div>
+                    <h1 style="margin: 0 0 10px 0; font-size: 28px; font-weight: 800; color: var(--gdg-dark);">${project.name}</h1>
+                    <p style="margin: 0; color: var(--text-medium); font-size: 15px; line-height: 1.6; max-width: 800px;">${project.description || 'Làm việc cùng nhau hướng tới mục tiêu chung'}</p>
+                </div>
+                <button class="btn btn-primary" id="add-task-btn" style="padding: 12px 24px; border-radius: var(--radius-md); box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);">
+                    <i class="fas fa-plus" style="margin-right: 8px;"></i> Add Task
+                </button>
+            </div>
+            
+            <div style="display: flex; gap: 24px; align-items: center; padding-top: 20px; border-top: 1px solid #f5f5f5;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 13px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Status:</span>
+                    <span class="badge status-${project.status.toLowerCase()}" style="padding: 4px 12px; font-size: 12px; font-weight: 600;">${project.status}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 13px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Leader:</span>
+                    <div style="display: flex; align-items: center; gap: 8px; background: #f8f9fa; padding: 4px 12px; border-radius: 20px; border: 1px solid #eee;">
+                        <div style="width: 20px; height: 20px; border-radius: 50%; background: var(--gdg-blue); color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">
+                            ${(project.leader?.displayName || 'L').charAt(0).toUpperCase()}
+                        </div>
+                        <strong id="project-leader-name" style="font-size: 13px; color: var(--text-dark);">${project.leader ? (project.leader.displayName || project.leader.email) : 'Chưa có'}</strong>
+                        ${localStorage.getItem('role') === 'ADMIN' ? '<button class="btn-text" id="change-leader-btn" style="color: var(--gdg-blue); font-size: 11px; margin-left: 5px; font-weight: 600;">Thay đổi</button>' : ''}
+                    </div>
+                </div>
             </div>
         </div>
-        <p>${project.description || ''}</p>
-        <p>Status: <span class="badge status-${project.status.toLowerCase()}">${project.status}</span></p>
-        <div class="members-section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3>Members</h3>
-                <button class="btn btn-primary" id="add-member-btn" style="padding: 5px 12px; font-size: 11px;">+ Add Member</button>
+
+        <div class="members-section fade-in" style="margin-bottom: 40px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--gdg-dark);">
+                    Team Members <span style="color: var(--text-light); font-weight: 400; font-size: 14px; margin-left: 8px;">(${(project.members || []).length})</span>
+                </h3>
+                <button class="btn btn-outline" id="add-member-btn" style="padding: 6px 16px; font-size: 12px; border-radius: var(--radius-sm);">
+                    <i class="fas fa-user-plus" style="margin-right: 6px;"></i> Add Member
+                </button>
             </div>
-            <div class="member-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
+            <div class="member-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px;">
                 ${(project.members || []).length > 0 ? project.members.map(m => `
-                    <div class="card" style="padding: 10px; display: flex; align-items: center; gap: 10px; position: relative;">
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700;">${(m.displayName || 'U').charAt(0)}</div>
-                        <div style="flex: 1">
-                            <div style="font-size: 13px; font-weight: 600;">${m.displayName || m.name}</div>
-                            <div style="font-size: 11px; color: var(--text-light);">${m.role || ''}</div>
+                    <div class="member-card card" style="padding: 15px; display: flex; align-items: center; gap: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color); transition: var(--transition);">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px;">
+                            ${(m.displayName || 'U').charAt(0).toUpperCase()}
                         </div>
-                        <button class="remove-member-btn" data-user-id="${m.id}" style="background: none; border: none; color: var(--gdg-red); cursor: pointer; padding: 5px;">
+                        <div style="flex: 1; overflow: hidden;">
+                            <div style="font-size: 14px; font-weight: 600; color: var(--gdg-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${m.displayName || m.name}</div>
+                            <div style="font-size: 11px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;">${m.role || 'Member'}</div>
+                        </div>
+                        <button class="remove-member-btn" data-user-id="${m.id}" style="background: rgba(234, 67, 53, 0.1); border: none; color: var(--gdg-red); cursor: pointer; padding: 6px; border-radius: 6px; font-size: 12px; transition: var(--transition);">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
-                `).join('') : '<p style="grid-column: 1/-1; color: var(--text-light); font-size: 13px;">No members listed or you don\'t have permission to see them.</p>'}
+                `).join('') : '<p style="grid-column: 1/-1; color: var(--text-light); font-size: 13px; text-align: center; padding: 40px; background: white; border-radius: var(--radius-md); border: 1px dashed var(--border-color);">No members joined this team yet.</p>'}
             </div>
         </div>
-        <div class="tasks-section">
-            <h3 style="margin-bottom: 20px;">Tasks</h3>
+
+        <div class="tasks-section fade-in" style="background: white; padding: 30px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--gdg-dark);">Project Tasks</h3>
+                <div style="display: flex; gap: 10px;">
+                    <div style="background: #f8f9fa; padding: 5px 15px; border-radius: 20px; font-size: 12px; color: var(--text-medium); border: 1px solid #eee;">
+                        <strong>${tasks.length}</strong> Total
+                    </div>
+                    <div style="background: rgba(52, 168, 83, 0.1); padding: 5px 15px; border-radius: 20px; font-size: 12px; color: var(--gdg-green); border: 1px solid rgba(52, 168, 83, 0.2);">
+                        <strong>${tasks.filter(t => t.status === 'DONE').length}</strong> Done
+                    </div>
+                </div>
+            </div>
     `;
 
      sortTasksByStatus(tasks);
 
      if (tasks.length === 0) {
-          html += `< p style = "padding: 20px; color: var(--text-secondary);" > No tasks yet.</p > `;
+          html += `<p style="padding: 60px; text-align: center; color: var(--text-light); font-size: 15px;">
+                <i class="fas fa-tasks" style="display: block; font-size: 40px; margin-bottom: 15px; opacity: 0.3;"></i>
+                No tasks have been created for this project yet.
+            </p>`;
      } else {
           html += `
-          < div class="table-container" >
+          <div class="table-container">
                <table class="task-table">
                     <thead>
-                         <tr><th>Title</th><th>Assignee</th><th>Priority</th><th>Deadline</th><th>Status</th><th>Actions</th></tr>
+                         <tr>
+                            <th>Title</th>
+                            <th>Assignees</th>
+                            <th>Priority</th>
+                            <th>Deadline</th>
+                            <th>Status</th>
+                            <th style="text-align: right;">Actions</th>
+                         </tr>
                     </thead>
                     <tbody>
                          `;
           tasks.forEach((t) => {
                const priorityClass = t.priority === 'HIGH' ? 'badge-red' : t.priority === 'MEDIUM' ? 'badge-yellow' : 'badge-blue';
+               const statusClass = t.status === 'DONE' ? 'status-completed' : (t.status === 'IN_PROGRESS' || t.status === 'IN PROGRESS' ? 'status-active' : 'status-pending');
+
                html += `
-                         <tr data-id="${t.id}" class="fade-in">
-                              <td style="font-weight: 600;">${t.title}</td>
+                         <tr data-id="${t.id}" class="task-row">
+                              <td style="font-weight: 600; color: var(--gdg-dark); padding: 16px;">${t.title}</td>
                               <td>
                                    ${t.assignees && t.assignees.length > 0 ?
-                         `<div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                            ${t.assignees.map(a => `<div title="${a.displayName || a.email || 'User'}" style="width: 28px; height: 28px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; border: 2px solid white; font-size: 11px;">${(a.displayName || a.email || 'U').charAt(0).toUpperCase()}</div>`).join('')}
+                         `<div style="display: flex; gap: -8px; flex-wrap: wrap;">
+                            ${t.assignees.map(a => `<div title="${a.displayName || a.email || 'User'}" style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; border: 2px solid white; font-size: 11px; margin-left: -8px; box-shadow: var(--shadow-sm);">${(a.displayName || a.email || 'U').charAt(0).toUpperCase()}</div>`).join('')}
                         </div>`
-                         : '<span style="color: var(--text-light); font-style: italic;">Unassigned</span>'}
+                         : '<span style="color: var(--text-light); font-size: 12px; font-style: italic;">Unassigned</span>'}
                               </td>
-                              <td><span class="badge ${priorityClass}">${t.priority}</span></td>
-                              <td>${t.deadline || ''}</td>
+                              <td><span class="badge ${priorityClass}" style="padding: 4px 10px; font-size: 11px;">${t.priority}</span></td>
+                              <td style="color: var(--text-medium); font-size: 13px;">${t.deadline ? new Date(t.deadline).toLocaleDateString() : '-'}</td>
                               <td>
-                                   <select class="task-status-select" data-task-id="${t.id}" style="padding: 4px; border-radius: 4px; font-size: 11px; border: 1px solid #ddd;">
+                                   <select class="task-status-select ${statusClass}" data-task-id="${t.id}" style="padding: 6px 12px; border-radius: 20px; font-size: 11px; border: 1px solid #eee; background: #f8f9fa; cursor: pointer; font-weight: 600;">
                                         <option value="TODO" ${t.status === 'TODO' ? 'selected' : ''}>TODO</option>
                                         <option value="IN_PROGRESS" ${t.status === 'IN PROGRESS' || t.status === 'IN_PROGRESS' ? 'selected' : ''}>IN PROGRESS</option>
                                         <option value="DONE" ${t.status === 'DONE' ? 'selected' : ''}>DONE</option>
                                    </select>
                               </td>
-                              <td style="display: flex; gap: 8px;">
-                                   <button class="btn btn-outline edit-assignees-task" data-assignees='${JSON.stringify((t.assignees || []).map(a => a.id))}'>Assign</button>
-                                   <button class="btn btn-danger delete-task">Delete</button>
+                              <td style="text-align: right;">
+                                   <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                                        <button class="btn-icon edit-assignees-task" title="Assign Members" data-assignees='${JSON.stringify((t.assignees || []).map(a => a.id))}'>
+                                            <i class="fas fa-user-plus"></i>
+                                        </button>
+                                        <button class="btn-icon btn-icon-danger delete-task" title="Delete Task">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                   </div>
                               </td>
                          </tr>
                          `;
           });
-          html += `</tbody></table></div > `;
+          html += `</tbody></table></div>`;
      }
-     html += `</div > `;
+     html += `</div>`;
      document.getElementById('content').innerHTML = html;
-     // Member Management Handlers
+
+     // Handlers
      const addMemberBtn = document.getElementById('add-member-btn');
      if (addMemberBtn) {
           addMemberBtn.addEventListener('click', () => showAddMemberModal(project.id));
@@ -675,7 +829,7 @@ function renderProjectDetail(project, tasks) {
                const userId = btn.dataset.userId;
                if (confirm('Are you sure you want to remove this member from the project?')) {
                     try {
-                         await apiRequest(`/ projects / ${project.id} /members/${userId} `, 'DELETE');
+                         await apiRequest(`/projects/${project.id}/members/${userId}`, 'DELETE');
                          loadProjectDetail(project.id);
                     } catch (err) {
                          alert('Error: ' + err.message);
@@ -684,18 +838,20 @@ function renderProjectDetail(project, tasks) {
           });
      });
 
-     // attach add task button
      const addTaskBtn = document.getElementById('add-task-btn');
      if (addTaskBtn) {
           addTaskBtn.addEventListener('click', () => showAddTaskModal(project.id, project.members || []));
      }
+
+     // Task status change, delete, and assign handlers would be attached elsewhere (init or list view)
+     // but in project detail they need to be re-attached if content is replaced.
 }
 
 function showAddTaskModal(projectId, members) {
      const modal = document.createElement('div');
      modal.className = 'modal-overlay';
      modal.innerHTML = `
-          < div class="modal-content" style = "width: 500px;" >
+          <div class="modal-content" style="width: 500px;">
                <div class="modal-header">
                     <h2><i class="fas fa-plus-circle" style="color: var(--gdg-blue); margin-right: 10px;"></i>Create New Task</h2>
                </div>
@@ -734,7 +890,7 @@ function showAddTaskModal(projectId, members) {
                     <button class="btn" style="background: #eee;" id="task-cancel-btn">Cancel</button>
                     <button class="btn btn-primary" id="task-submit-btn">Create Task</button>
                </div>
-          </div >
+          </div>
           `;
      document.body.appendChild(modal);
 
@@ -757,7 +913,7 @@ function showAddTaskModal(projectId, members) {
           btn.textContent = 'Creating...';
 
           try {
-               await apiRequest(`/ projects / ${projectId}/tasks`, 'POST', {
+               await apiRequest(`/projects/${projectId}/tasks`, 'POST', {
                     title,
                     description,
                     priority,
@@ -1279,6 +1435,9 @@ function init() {
                     }
                } else if (e.target.matches('#create-project')) {
                     showCreateProjectModal();
+               } else if (e.target.id === 'change-leader-btn' || e.target.closest('#change-leader-btn')) {
+                    const pid = localStorage.getItem('projectId');
+                    if (pid) showChangeLeaderModal(pid);
                }
                else if (e.target.matches('.delete-task')) {
                     const id = e.target.closest('tr').dataset.id;
@@ -1301,12 +1460,16 @@ function init() {
                if (e.target.matches('.task-status-select')) {
                     const taskId = e.target.dataset.taskId;
                     const newStatus = e.target.value;
+                    console.log(`Updating task ${taskId} status to: ${newStatus}`);
                     e.target.disabled = true;
-                    apiRequest(`/tasks/${taskId}/status`, 'PATCH', { status: newStatus })
+                    // Path is now standardized to /tasks/{id}/status using PUT for better compatibility
+                    apiRequest(`/tasks/${taskId}/status`, 'PUT', { status: newStatus })
                          .then(() => {
+                              console.log(`Task ${taskId} status updated successfully`);
                               e.target.disabled = false;
                          })
                          .catch(err => {
+                              console.error(`Failed to update status for task ${taskId}:`, err);
                               alert('Error updating status: ' + err.message);
                               e.target.disabled = false;
                          });
@@ -1334,4 +1497,56 @@ if (document.readyState === 'loading') {
      document.addEventListener('DOMContentLoaded', init);
 } else {
      init();
+}
+
+async function showChangeLeaderModal(projectId) {
+     let users = [];
+     try {
+          users = await apiRequest('/users') || [];
+     } catch (err) {
+          console.error("Failed to fetch users for leader selection:", err);
+     }
+
+     const leaderOptions = users.map(u => `<option value="${u.id}">${u.displayName || u.email} (${u.role})</option>`).join('');
+
+     const modal = document.createElement('div');
+     modal.className = 'modal-overlay';
+     modal.innerHTML = `
+          <div class="modal-content" style="max-width: 400px; padding: 30px;">
+               <h3>Thay đổi Leader Dự Án</h3>
+               <div class="form-group" style="margin-top: 20px;">
+                    <label>Chọn Leader Mới</label>
+                    <select id="new-leader-select" class="form-input">
+                         <option value="">-- Chọn Leader --</option>
+                         ${leaderOptions}
+                    </select>
+               </div>
+               <div class="modal-footer" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 25px; padding: 0; background: none; border: none;">
+                    <button class="btn" id="cancel-change-leader">Hủy</button>
+                    <button class="btn btn-primary" id="submit-change-leader">Cập nhật</button>
+               </div>
+          </div>
+     `;
+     document.body.appendChild(modal);
+
+     const close = () => modal.remove();
+     document.getElementById('cancel-change-leader').onclick = close;
+     document.getElementById('submit-change-leader').onclick = async () => {
+          const leaderId = document.getElementById('new-leader-select').value;
+          if (!leaderId) return alert('Vui lòng chọn leader!');
+
+          const btn = document.getElementById('submit-change-leader');
+          btn.disabled = true;
+          btn.textContent = 'Đang lưu...';
+
+          try {
+               await apiRequest(`/projects/${projectId}`, 'PUT', { leaderId });
+               close();
+               loadProjectDetail(projectId);
+          } catch (err) {
+               alert('Lỗi: ' + err.message);
+               btn.disabled = false;
+               btn.textContent = 'Cập nhật';
+          }
+     };
 }
