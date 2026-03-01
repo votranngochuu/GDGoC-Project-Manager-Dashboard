@@ -8,15 +8,15 @@ app:
   frontend:
     path: frontend
     backend-url: /gdgoc_dashboard/api
-    # Firebase client config (optional - copy from Firebase Console)
+    # Firebase client config (copy từ Firebase Console → Project settings → Your apps)
     firebase:
-      api-key: ""
-      auth-domain: ""
-      project-id: ""
-      storage-bucket: ""
-      messaging-sender-id: ""
-      app-id: ""
-      measurement-id: ""
+      api-key: "AIzaSyD692wzVcc35Lo5fhrD8oIvGFGMacChxzQ"
+      auth-domain: "gdgoc-performance-dashboard.firebaseapp.com"
+      project-id: "gdgoc-performance-dashboard"
+      storage-bucket: "gdgoc-performance-dashboard.firebasestorage.app"
+      messaging-sender-id: "988792928825"
+      app-id: "1:988792928825:web:57da898b54f1448eb02be8"
+      measurement-id: "G-V714JC0VQE"
 
 spring:
   application:

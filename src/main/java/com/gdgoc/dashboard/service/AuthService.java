@@ -37,12 +37,13 @@ public class AuthService {
 
             User user = userRepository.findByFirebaseUid(uid)
                     .orElseGet(() -> {
+                        Role initialRole = userRepository.count() == 0 ? Role.ADMIN : Role.MEMBER;
                         User newUser = User.builder()
                                 .firebaseUid(uid)
                                 .email(email)
                                 .displayName(name)
                                 .photoUrl(picture)
-                                .role(Role.MEMBER)
+                                .role(initialRole)
                                 .build();
                         return userRepository.save(newUser);
                     });

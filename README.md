@@ -316,7 +316,8 @@ spring:
 2. Bật **Authentication** → **Google Sign-In**
 3. Tải **Service Account Key** (JSON) từ **Project Settings** → **Service accounts**
 4. Đặt file tại: `src/main/resources/firebase-service-account.json`
-5. Cấu hình Firebase client cho frontend: trong `application.yml` điền `app.frontend.firebase.*` (api-key, auth-domain, project-id, …) hoặc copy `frontend/env.js.example` thành `frontend/env.js` và điền (khi chạy frontend tách riêng).
+5. Cấu hình Firebase client cho frontend: trong `application.yml` điền `app.frontend.firebase.*` (api-key, auth-domain, project-id, storage-bucket, messaging-sender-id, app-id, measurement-id). Lấy các giá trị từ Firebase Console → Project Settings → General → Your apps.  
+   → **Nút "Đăng nhập qua Google" chỉ hoạt động sau khi hoàn thành bước 3 và 5.**
 
 ### 4. Chạy ứng dụng (Backend + Frontend cùng lúc)
 
@@ -326,12 +327,13 @@ Chạy từ **thư mục gốc** của project:
 # Dùng PostgreSQL (đã tạo DB và cấu hình đúng mật khẩu)
 mvn spring-boot:run
 
-# Hoặc chạy không cần PostgreSQL (H2 in-memory)
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
+# Hoặc chạy không cần PostgreSQL (H2 in-memory) — dùng port 8081
+mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
 ```
+> **Windows PowerShell:** Phải đặt tham số trong ngoặc kép: `"-Dspring-boot.run.profiles=dev"`, nếu không Maven sẽ báo lỗi "Unknown lifecycle phase".
 
-- **Backend API:** `http://localhost:8080/gdgoc_dashboard`
-- **Frontend (giao diện):** `http://localhost:8080/gdgoc_dashboard/` hoặc `http://localhost:8080/gdgoc_dashboard/index.html`
+- **Port 8080 (mặc định):** Backend API `http://localhost:8080/gdgoc_dashboard`, Frontend `http://localhost:8080/gdgoc_dashboard/`
+- **Profile `dev` (H2):** Dùng port **8081** → `http://localhost:8081/gdgoc_dashboard/` (tránh conflict khi 8080 đang bị chiếm)
 
 Frontend được serve từ thư mục `frontend/` và file `env.js` (BACKEND_URL, Firebase) do backend cung cấp, nên không cần chạy thêm server frontend hay tạo file `env.js` thủ công.
 
@@ -339,13 +341,13 @@ Frontend được serve từ thư mục `frontend/` và file `env.js` (BACKEND_U
 
 | URL | Mô tả |
 |-----|-------|
-| `http://localhost:8080/gdgoc_dashboard/` | Trang đăng nhập / Dashboard (Frontend) |
-| `http://localhost:8080/gdgoc_dashboard/swagger-ui.html` | Swagger API Docs |
+| `http://localhost:8080/gdgoc_dashboard/` (hoặc 8081 khi dùng `dev`) | Trang đăng nhập / Dashboard (Frontend) |
+| `http://localhost:8080/gdgoc_dashboard/swagger-ui.html` (hoặc 8081 khi `dev`) | Swagger API Docs |
 | `http://localhost:8080/gdgoc_dashboard/h2-console` | H2 Console (chỉ khi dùng profile `dev`) |
 
 ### Lỗi thường gặp
 
-- **Port 8080 was already in use** — Có process cũ đang chiếm cổng. Trên Windows: `netstat -ano | findstr :8080` để xem PID, rồi `taskkill /PID <số_PID> /F`. Sau đó chạy lại `mvn spring-boot:run`.
+- **Port 8080 was already in use** — Có process cũ đang chiếm cổng. Cách 1: Trên Windows `netstat -ano | findstr :8080` để xem PID, rồi `taskkill /PID <số_PID> /F`. Cách 2: Chạy với profile `dev` (dùng port 8081): `mvn spring-boot:run "-Dspring-boot.run.profiles=dev"`.
 - **HTTP 403 khi mở `/gdgoc_dashboard/`** — Đảm bảo đã restart backend sau khi cập nhật code (SecurityConfig đã cho phép truy cập frontend không cần đăng nhập).
 
 ---

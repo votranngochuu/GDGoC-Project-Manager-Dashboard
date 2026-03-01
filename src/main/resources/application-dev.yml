@@ -1,4 +1,8 @@
 # Profile "dev": dùng H2 in-memory, không cần cài PostgreSQL
+# Dùng port 8081 để tránh conflict khi 8080 đang bị chiếm
+server:
+  port: 8081
+
 spring:
   datasource:
     url: jdbc:h2:mem:gdgoc_dashboard;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
@@ -15,17 +19,4 @@ spring:
     show-sql: true
 
 # Console H2: http://localhost:8080/gdgoc_dashboard/h2-console
-
-# Frontend + env.js: same as default (backend-url relative)
-app:
-  frontend:
-    path: frontend
-    backend-url: /gdgoc_dashboard/api
-    firebase:
-      api-key: ""
-      auth-domain: ""
-      project-id: ""
-      storage-bucket: ""
-      messaging-sender-id: ""
-      app-id: ""
-      measurement-id: ""
+# Firebase config lấy từ application.yml (không override ở đây)
