@@ -72,11 +72,12 @@ public class SecurityConfig implements WebMvcConfigurer {
                         // H2 Console (dev profile)
                         .requestMatchers("/h2-console/**").permitAll()
 
-                        // Frontend static + env.js (served by same app)
-                        .requestMatchers("/", "/index.html", "/dashboard.html", "/403.html", "/404.html",
-                                "/env.js", "/css/**", "/Public/**",
-                                "/**/*.js", "/**/*.css", "/**/*.png", "/**/*.ico", "/**/*.svg", "/**/*.woff2")
-                        .permitAll()
+                        // Frontend & static: mọi path không bắt đầu bằng /api đều cho phép (tránh 403 khi vào / hoặc /gdgoc_dashboard/)
+                        .requestMatchers(request -> {
+                            String path = request.getServletPath();
+                            if (path == null) path = "";
+                            return !path.startsWith("/api");
+                        }).permitAll()
 
                         // Admin-only endpoints
                         .requestMatchers("/api/dashboard/admin", "/api/dashboard/admin/**").hasRole("ADMIN")

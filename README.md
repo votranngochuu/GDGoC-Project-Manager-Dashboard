@@ -343,6 +343,11 @@ Frontend được serve từ thư mục `frontend/` và file `env.js` (BACKEND_U
 | `http://localhost:8080/gdgoc_dashboard/swagger-ui.html` | Swagger API Docs |
 | `http://localhost:8080/gdgoc_dashboard/h2-console` | H2 Console (chỉ khi dùng profile `dev`) |
 
+### Lỗi thường gặp
+
+- **Port 8080 was already in use** — Có process cũ đang chiếm cổng. Trên Windows: `netstat -ano | findstr :8080` để xem PID, rồi `taskkill /PID <số_PID> /F`. Sau đó chạy lại `mvn spring-boot:run`.
+- **HTTP 403 khi mở `/gdgoc_dashboard/`** — Đảm bảo đã restart backend sau khi cập nhật code (SecurityConfig đã cho phép truy cập frontend không cần đăng nhập).
+
 ---
 
 ## 📂 Cấu Trúc Thư Mục
