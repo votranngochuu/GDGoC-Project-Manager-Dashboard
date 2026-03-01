@@ -53,7 +53,6 @@ async function loadDashboard() {
           else endpoint = '/dashboard/member';
 
           const rawData = await apiRequest(endpoint);
-          console.log("Dashboard raw data:", rawData);
           const data = rawData || {};
 
           // Fetch dynamic recent items based on role
@@ -84,7 +83,6 @@ async function loadDashboard() {
                     data.upcomingProjects = upcomingCount;
                     data.overdueProjects = overdueCount;
                     data.totalProjects = projects.length;
-                    console.log("Dashboard stats recalculated:", { activeCount, upcomingCount, overdueCount });
                }
           }
 
@@ -390,15 +388,22 @@ function renderDashboard(role, data) {
      }
 }
 
+let _modalOpen = false;
 async function showCreateProjectModal() {
+     if (_modalOpen) return;
+     _modalOpen = true;
      let users = [];
+     let userLoadError = null;
      try {
           users = await apiRequest('/users') || [];
      } catch (err) {
           console.error("Failed to fetch users for leader selection:", err);
+          userLoadError = err.message;
      }
 
-     const leaderOptions = users.map(u => `<option value="${u.id}">${u.displayName || u.email} (${u.role})</option>`).join('');
+     const leaderOptions = users.length > 0
+          ? users.map(u => `<option value="${u.id}">${u.displayName || u.email} (${u.role})</option>`).join('')
+          : `<option value="" disabled>⚠️ Không thể tải danh sách user - kiểm tra backend</option>`;
 
      const modal = document.createElement('div');
      modal.className = 'modal-overlay';
@@ -445,46 +450,50 @@ async function showCreateProjectModal() {
      `;
      document.body.appendChild(modal);
 
-     const close = () => modal.remove();
-     modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
-     document.getElementById('modal-cancel-btn').addEventListener('click', close);
+     const close = () => { modal.remove(); _modalOpen = false; };
 
-     document.getElementById('modal-submit-btn').addEventListener('click', async () => {
-          const name = document.getElementById('modal-project-name').value.trim();
-          const description = document.getElementById('modal-project-desc').value.trim();
-          const startDate = document.getElementById('modal-project-start').value;
-          const endDate = document.getElementById('modal-project-end').value;
-          const leaderId = document.getElementById('modal-project-leader').value;
+     try {
+          modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+          document.getElementById('modal-cancel-btn').addEventListener('click', close);
+          document.getElementById('modal-submit-btn').addEventListener('click', async () => {
+               const name = document.getElementById('modal-project-name').value.trim();
+               const description = document.getElementById('modal-project-desc').value.trim();
+               const startDate = document.getElementById('modal-project-start').value;
+               const endDate = document.getElementById('modal-project-end').value;
+               const leaderId = document.getElementById('modal-project-leader').value;
 
-          if (!name) return alert('Vui lòng nhập tên project.');
-          if (!leaderId) return alert('Vui lòng chọn leader cho dự án.');
-          if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-               return alert('Ngày kết thúc phải sau ngày bắt đầu.');
-          }
-
-          const payload = { name, description, leaderId };
-          if (startDate) payload.startDate = startDate;
-          if (endDate) payload.endDate = endDate;
-
-          const btn = document.getElementById('modal-submit-btn');
-          btn.disabled = true;
-          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tạo...';
-
-          try {
-               await apiRequest('/projects', 'POST', payload);
-               close();
-               loadDashboard(); // Refresh both to be safe
-               if (document.getElementById('nav-projects')?.classList.contains('active')) {
-                    loadProjects();
+               if (!name) return alert('Vui lòng nhập tên project.');
+               if (!leaderId) return alert('Vui lòng chọn leader cho dự án.');
+               if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+                    return alert('Ngày kết thúc phải sau ngày bắt đầu.');
                }
-          } catch (err) {
-               alert('Lỗi: ' + err.message);
-               btn.disabled = false;
-               btn.innerHTML = '<i class="fas fa-plus"></i> Tạo Project';
-          }
-     });
-}
 
+               const payload = { name, description, leaderId };
+               if (startDate) payload.startDate = startDate;
+               if (endDate) payload.endDate = endDate;
+
+               const btn = document.getElementById('modal-submit-btn');
+               btn.disabled = true;
+               btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tạo...';
+
+               try {
+                    const result = await apiRequest('/projects', 'POST', payload);
+                    close();
+
+                    // Redirect to dashboard as requested by user
+                    activateLink('nav-dashboard');
+                    loadDashboard();
+               } catch (err) {
+                    console.error("Project creation failed:", err);
+                    alert('Lỗi: ' + err.message);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-plus"></i> Tạo Project';
+               }
+          });
+     } catch (e) {
+          console.error('❌ Error attaching modal listeners:', e);
+     }
+}
 
 // project list and detail
 let _allProjects = [];
@@ -733,12 +742,7 @@ function attachProjectHandlers() {
                loadProjectDetail(card.dataset.id);
           });
      });
-
-     // Create project button
-     const createBtn = document.getElementById('create-project');
-     if (createBtn) {
-          createBtn.addEventListener('click', () => showCreateProjectModal());
-     }
+     // Note: #create-project button is handled by the delegated content click handler in init()
 }
 
 async function loadProjectDetail(id) {
@@ -1456,15 +1460,17 @@ function renderUserList(users, isFiltering = false) {
      });
 }
 
+// utility for navigation UI
+function activateLink(id) {
+     document
+          .querySelectorAll('.nav-link')
+          .forEach((a) => a.classList.remove('active'));
+     const el = document.getElementById(id);
+     if (el) el.classList.add('active');
+}
+
 // initialization
 function init() {
-     function activateLink(id) {
-          document
-               .querySelectorAll('.nav-link')
-               .forEach((a) => a.classList.remove('active'));
-          const el = document.getElementById(id);
-          if (el) el.classList.add('active');
-     }
 
      const navDashboard = document.getElementById('nav-dashboard');
      const navProjects = document.getElementById('nav-projects');
