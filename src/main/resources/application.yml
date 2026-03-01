@@ -3,6 +3,21 @@ server:
   servlet:
     context-path: /gdgoc_dashboard
 
+# Frontend: served from project folder "frontend/". BACKEND_URL used by env.js.
+app:
+  frontend:
+    path: frontend
+    backend-url: /gdgoc_dashboard/api
+    # Firebase client config (optional - copy from Firebase Console)
+    firebase:
+      api-key: ""
+      auth-domain: ""
+      project-id: ""
+      storage-bucket: ""
+      messaging-sender-id: ""
+      app-id: ""
+      measurement-id: ""
+
 spring:
   application:
     name: gdgoc-dashboard

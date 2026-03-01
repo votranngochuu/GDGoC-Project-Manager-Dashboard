@@ -69,6 +69,15 @@ public class SecurityConfig implements WebMvcConfigurer {
                                 "/v3/api-docs/**", "/v3/api-docs.yaml")
                         .permitAll()
 
+                        // H2 Console (dev profile)
+                        .requestMatchers("/h2-console/**").permitAll()
+
+                        // Frontend static + env.js (served by same app)
+                        .requestMatchers("/", "/index.html", "/dashboard.html", "/403.html", "/404.html",
+                                "/env.js", "/css/**", "/Public/**",
+                                "/**/*.js", "/**/*.css", "/**/*.png", "/**/*.ico", "/**/*.svg", "/**/*.woff2")
+                        .permitAll()
+
                         // Admin-only endpoints
                         .requestMatchers("/api/dashboard/admin", "/api/dashboard/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/users/*/role").hasRole("ADMIN")
@@ -84,6 +93,9 @@ public class SecurityConfig implements WebMvcConfigurer {
                         // All authenticated users
                         .anyRequest().authenticated())
                 .addFilterBefore(firebaseTokenFilter, UsernamePasswordAuthenticationFilter.class);
+
+        // H2 console uses frames
+        http.headers(headers -> headers.frameOptions(f -> f.sameOrigin()));
 
         return http.build();
     }

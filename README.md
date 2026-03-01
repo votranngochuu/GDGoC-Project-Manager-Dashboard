@@ -316,31 +316,32 @@ spring:
 2. Bật **Authentication** → **Google Sign-In**
 3. Tải **Service Account Key** (JSON) từ **Project Settings** → **Service accounts**
 4. Đặt file tại: `src/main/resources/firebase-service-account.json`
-5. Cập nhật `frontend/firebase-init.js` với Firebase config của bạn
+5. Cấu hình Firebase client cho frontend: trong `application.yml` điền `app.frontend.firebase.*` (api-key, auth-domain, project-id, …) hoặc copy `frontend/env.js.example` thành `frontend/env.js` và điền (khi chạy frontend tách riêng).
 
-### 4. Chạy Backend
+### 4. Chạy ứng dụng (Backend + Frontend cùng lúc)
+
+Chạy từ **thư mục gốc** của project:
 
 ```bash
+# Dùng PostgreSQL (đã tạo DB và cấu hình đúng mật khẩu)
 mvn spring-boot:run
+
+# Hoặc chạy không cần PostgreSQL (H2 in-memory)
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-Backend sẽ chạy tại: `http://localhost:8080/gdgoc_dashboard`
+- **Backend API:** `http://localhost:8080/gdgoc_dashboard`
+- **Frontend (giao diện):** `http://localhost:8080/gdgoc_dashboard/` hoặc `http://localhost:8080/gdgoc_dashboard/index.html`
 
-### 5. Chạy Frontend
+Frontend được serve từ thư mục `frontend/` và file `env.js` (BACKEND_URL, Firebase) do backend cung cấp, nên không cần chạy thêm server frontend hay tạo file `env.js` thủ công.
 
-Mở `frontend/index.html` bằng trình duyệt hoặc sử dụng Live Server:
-
-```bash
-# Với VS Code Live Server hoặc bất kỳ static file server
-npx serve frontend
-```
-
-### 6. Truy Cập
+### 5. Truy cập
 
 | URL | Mô tả |
 |-----|-------|
+| `http://localhost:8080/gdgoc_dashboard/` | Trang đăng nhập / Dashboard (Frontend) |
 | `http://localhost:8080/gdgoc_dashboard/swagger-ui.html` | Swagger API Docs |
-| `http://localhost:3000` (hoặc Live Server port) | Frontend UI |
+| `http://localhost:8080/gdgoc_dashboard/h2-console` | H2 Console (chỉ khi dùng profile `dev`) |
 
 ---
 
